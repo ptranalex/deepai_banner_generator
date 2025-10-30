@@ -32,6 +32,7 @@ Thumbs.db
 
 # Generated files
 banners/
+posts/*
+!posts/.gitkeep
 *.png
 !docs/**/*.png
-
