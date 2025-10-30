@@ -1,8 +1,7 @@
 """Tests for DeepAI client module"""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch
 
 
 def test_deepai_client_initialization(mock_env_vars: None) -> None:

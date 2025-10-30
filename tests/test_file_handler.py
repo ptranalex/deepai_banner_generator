@@ -1,6 +1,5 @@
 """Tests for file handler module"""
 
-import pytest
 from pathlib import Path
 
 

@@ -80,12 +80,16 @@ def interactive_select_file(files: list[Path]) -> Path:
             if 1 <= choice_num <= len(files):
                 return files[choice_num - 1]
             else:
-                console.print(f"[red]Please enter a number between 1 and {len(files)}[/red]")
+                console.print(
+                    f"[red]Please enter a number between 1 and {len(files)}[/red]"
+                )
         except ValueError:
-            console.print("[red]Invalid input. Please enter a number or 'q' to quit.[/red]")
+            console.print(
+                "[red]Invalid input. Please enter a number or 'q' to quit.[/red]"
+            )
         except KeyboardInterrupt:
             console.print("\n[yellow]Exiting...[/yellow]")
-            raise typer.Exit(0)
+            raise typer.Exit(0) from None
 
 
 def interactive_select_prompt(prompts: list[str]) -> str:
@@ -97,7 +101,9 @@ def interactive_select_prompt(prompts: list[str]) -> str:
     Returns:
         Selected prompt
     """
-    table = Table(title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True)
+    table = Table(
+        title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True
+    )
     table.add_column("#", style="cyan", width=4)
     table.add_column("Prompt", style="magenta")
 
@@ -120,12 +126,16 @@ def interactive_select_prompt(prompts: list[str]) -> str:
             if 1 <= choice_num <= len(prompts):
                 return prompts[choice_num - 1]
             else:
-                console.print(f"[red]Please enter a number between 1 and {len(prompts)}[/red]")
+                console.print(
+                    f"[red]Please enter a number between 1 and {len(prompts)}[/red]"
+                )
         except ValueError:
-            console.print("[red]Invalid input. Please enter a number or 'q' to quit.[/red]")
+            console.print(
+                "[red]Invalid input. Please enter a number or 'q' to quit.[/red]"
+            )
         except KeyboardInterrupt:
             console.print("\n[yellow]Exiting...[/yellow]")
-            raise typer.Exit(0)
+            raise typer.Exit(0) from None
 
 
 def interactive_select_prompts(prompts: list[str]) -> list[int]:
@@ -137,7 +147,9 @@ def interactive_select_prompts(prompts: list[str]) -> list[int]:
     Returns:
         List of selected prompt indices (0-based)
     """
-    table = Table(title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True)
+    table = Table(
+        title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True
+    )
     table.add_column("#", style="cyan", width=4)
     table.add_column("Prompt", style="magenta")
 
@@ -182,7 +194,7 @@ def interactive_select_prompts(prompts: list[str]) -> list[int]:
             console.print(f"[red]Error: {e}[/red]")
         except KeyboardInterrupt:
             console.print("\n[yellow]Cancelled.[/yellow]")
-            raise typer.Exit(0)
+            raise typer.Exit(0) from None
 
 
 @app.command()
@@ -253,7 +265,7 @@ def generate(
         console.print("  1. Environment: export OPENAI_API_KEY='sk-...'")
         console.print("  2. .env file: Copy .env.example to .env and edit")
         console.print("  3. CLI flag: --openai-key 'sk-...'")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     # Validate dimensions
     if width % 32 != 0 or height % 32 != 0:
@@ -266,7 +278,7 @@ def generate(
         deepai_client = DeepAIClient(deepai_key)
     except Exception as e:
         console.print(f"[red]Failed to initialize clients: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     # Find markdown files
     console.print(f"🔍 Searching for markdown files in: [cyan]{input_dir}[/cyan]")
@@ -334,7 +346,9 @@ def generate(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task("🤖 Asking ChatGPT to create a banner prompt...", total=None)
+            task = progress.add_task(
+                "🤖 Asking ChatGPT to create a banner prompt...", total=None
+            )
             banner_prompt = gpt_client.generate_simple_prompt(title, body)
             progress.update(task, completed=True)
 
@@ -348,7 +362,9 @@ def generate(
 
         # Confirm before generating
         proceed = (
-            console.input("\n[bold cyan]Generate banner with this prompt? (Y/n):[/bold cyan] ")
+            console.input(
+                "\n[bold cyan]Generate banner with this prompt? (Y/n):[/bold cyan] "
+            )
             .strip()
             .lower()
         )
@@ -376,7 +392,9 @@ def generate(
         if len(banner_prompts) == 1:
             console.print("\n🎨 [bold]Generating banner via DeepAI...[/bold]")
         else:
-            console.print(f"\n🎨 [bold]Generating {len(banner_prompts)} banners...[/bold]")
+            console.print(
+                f"\n🎨 [bold]Generating {len(banner_prompts)} banners...[/bold]"
+            )
 
         # Generate all banners with progress tracking
         with Progress(
@@ -389,7 +407,7 @@ def generate(
             successful = 0
             failed = 0
 
-            for prompt, output_path in zip(banner_prompts, output_paths):
+            for prompt, output_path in zip(banner_prompts, output_paths, strict=False):
                 progress.update(task, description=f"Generating {output_path.name}...")
 
                 success = deepai_client.generate_and_save(
@@ -479,7 +497,7 @@ def direct(
         console.print(
             "\n[yellow]Set DEEPAI_API_KEY environment variable or use --deepai-key[/yellow]"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     # Prepare output
     OutputHandler.ensure_output_directory(output)
@@ -508,7 +526,9 @@ def direct(
     )
 
     if success:
-        console.print(f"\n✨ [bold green]Done![/bold green] Banner saved to: [cyan]{output}[/cyan]")
+        console.print(
+            f"\n✨ [bold green]Done![/bold green] Banner saved to: [cyan]{output}[/cyan]"
+        )
     else:
         console.print("\n[red]❌ Banner generation failed.[/red]")
         raise typer.Exit(1)

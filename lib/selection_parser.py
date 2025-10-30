@@ -45,8 +45,8 @@ def parse_selection(input_str: str, max_count: int) -> list[int]:
 
                 start_idx = int(start) - 1  # Convert to 0-based
                 end_idx = int(end) - 1
-            except ValueError:
-                raise ValueError(f"Invalid range format: {part}")
+            except ValueError as e:
+                raise ValueError(f"Invalid range format: {part}") from e
 
             if start_idx < 0 or end_idx >= max_count:
                 raise ValueError(f"Range out of bounds (1-{max_count}): {part}")
@@ -59,15 +59,15 @@ def parse_selection(input_str: str, max_count: int) -> list[int]:
             # Single number
             try:
                 idx = int(part) - 1  # Convert to 0-based
-            except ValueError:
-                raise ValueError(f"Invalid number: {part}")
+            except ValueError as e:
+                raise ValueError(f"Invalid number: {part}") from e
 
             if idx < 0 or idx >= max_count:
                 raise ValueError(f"Number out of range (1-{max_count}): {int(part)}")
 
             indices.add(idx)
 
-    return sorted(list(indices))
+    return sorted(indices)
 
 
 __all__ = ["parse_selection"]

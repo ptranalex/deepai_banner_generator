@@ -1,7 +1,8 @@
 """Tests for GPT client module"""
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 
 def test_gpt_client_initialization(mock_env_vars: None) -> None:

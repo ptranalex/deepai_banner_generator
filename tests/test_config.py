@@ -2,7 +2,6 @@
 
 import pytest
 from pydantic import ValidationError
-from pathlib import Path
 
 
 def test_settings_loads_from_env(mock_env_vars: None) -> None:
