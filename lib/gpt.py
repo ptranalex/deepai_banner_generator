@@ -129,7 +129,7 @@ class GPTClient:
                 line = line.strip()
                 if not line:
                     continue
-                # Remove leading number and separators like "1.", "1)", "1-"
+                # Remove leading number and separators like "1.", "1)", "1-" And all quotes
                 for i in range(1, 11):
                     prefixes = [f"{i}.", f"{i})", f"{i} -", f"{i}-"]
                     for prefix in prefixes:
