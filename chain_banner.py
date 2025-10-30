@@ -80,13 +80,9 @@ def interactive_select_file(files: list[Path]) -> Path:
             if 1 <= choice_num <= len(files):
                 return files[choice_num - 1]
             else:
-                console.print(
-                    f"[red]Please enter a number between 1 and {len(files)}[/red]"
-                )
+                console.print(f"[red]Please enter a number between 1 and {len(files)}[/red]")
         except ValueError:
-            console.print(
-                "[red]Invalid input. Please enter a number or 'q' to quit.[/red]"
-            )
+            console.print("[red]Invalid input. Please enter a number or 'q' to quit.[/red]")
         except KeyboardInterrupt:
             console.print("\n[yellow]Exiting...[/yellow]")
             raise typer.Exit(0) from None
@@ -101,9 +97,7 @@ def interactive_select_prompt(prompts: list[str]) -> str:
     Returns:
         Selected prompt
     """
-    table = Table(
-        title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True
-    )
+    table = Table(title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True)
     table.add_column("#", style="cyan", width=4)
     table.add_column("Prompt", style="magenta")
 
@@ -126,13 +120,9 @@ def interactive_select_prompt(prompts: list[str]) -> str:
             if 1 <= choice_num <= len(prompts):
                 return prompts[choice_num - 1]
             else:
-                console.print(
-                    f"[red]Please enter a number between 1 and {len(prompts)}[/red]"
-                )
+                console.print(f"[red]Please enter a number between 1 and {len(prompts)}[/red]")
         except ValueError:
-            console.print(
-                "[red]Invalid input. Please enter a number or 'q' to quit.[/red]"
-            )
+            console.print("[red]Invalid input. Please enter a number or 'q' to quit.[/red]")
         except KeyboardInterrupt:
             console.print("\n[yellow]Exiting...[/yellow]")
             raise typer.Exit(0) from None
@@ -147,9 +137,7 @@ def interactive_select_prompts(prompts: list[str]) -> list[int]:
     Returns:
         List of selected prompt indices (0-based)
     """
-    table = Table(
-        title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True
-    )
+    table = Table(title=f"💡 Generated {len(prompts)} Origami Prompts", show_header=True)
     table.add_column("#", style="cyan", width=4)
     table.add_column("Prompt", style="magenta")
 
@@ -346,9 +334,7 @@ def generate(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            task = progress.add_task(
-                "🤖 Asking ChatGPT to create a banner prompt...", total=None
-            )
+            task = progress.add_task("🤖 Asking ChatGPT to create a banner prompt...", total=None)
             banner_prompt = gpt_client.generate_simple_prompt(title, body)
             progress.update(task, completed=True)
 
@@ -362,9 +348,7 @@ def generate(
 
         # Confirm before generating
         proceed = (
-            console.input(
-                "\n[bold cyan]Generate banner with this prompt? (Y/n):[/bold cyan] "
-            )
+            console.input("\n[bold cyan]Generate banner with this prompt? (Y/n):[/bold cyan] ")
             .strip()
             .lower()
         )
@@ -392,9 +376,7 @@ def generate(
         if len(banner_prompts) == 1:
             console.print("\n🎨 [bold]Generating banner via DeepAI...[/bold]")
         else:
-            console.print(
-                f"\n🎨 [bold]Generating {len(banner_prompts)} banners...[/bold]"
-            )
+            console.print(f"\n🎨 [bold]Generating {len(banner_prompts)} banners...[/bold]")
 
         # Generate all banners with progress tracking
         with Progress(
@@ -526,9 +508,7 @@ def direct(
     )
 
     if success:
-        console.print(
-            f"\n✨ [bold green]Done![/bold green] Banner saved to: [cyan]{output}[/cyan]"
-        )
+        console.print(f"\n✨ [bold green]Done![/bold green] Banner saved to: [cyan]{output}[/cyan]")
     else:
         console.print("\n[red]❌ Banner generation failed.[/red]")
         raise typer.Exit(1)
