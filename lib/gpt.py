@@ -64,11 +64,11 @@ class GPTClient:
             prompt = response.choices[0].message.content
             if not prompt:
                 raise ValueError("Empty response from OpenAI")
-            prompt = prompt.strip()
+            result = prompt.strip()
             # Remove quotes if present
-            prompt = prompt.strip('"').strip("'")
-            logger.info(f"Generated simple prompt: {prompt[:50]}...")
-            return prompt
+            result = result.strip('"').strip("'")
+            logger.info(f"Generated simple prompt: {result[:50]}...")
+            return result
 
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {e}")
@@ -114,7 +114,7 @@ class GPTClient:
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[system_msg, user_msg],  # type: ignore[list-item]
+                messages=[system_msg, user_msg],  # type: ignore
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )

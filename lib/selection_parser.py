@@ -20,7 +20,7 @@ def parse_selection(input_str: str, max_count: int) -> list[int]:
     Raises:
         ValueError: If input contains invalid numbers or ranges
     """
-    indices = set()
+    indices: set[int] = set()
 
     # Normalize separators: replace spaces around commas/hyphens, then spaces -> commas
     # But preserve hyphens for ranges
