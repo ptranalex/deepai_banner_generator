@@ -45,9 +45,7 @@ def test_generate_simple_prompt(mock_openai: Mock, mock_env_vars: None) -> None:
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_simple_prompt_removes_quotes(
-    mock_openai: Mock, mock_env_vars: None
-) -> None:
+def test_generate_simple_prompt_removes_quotes(mock_openai: Mock, mock_env_vars: None) -> None:
     """Test that simple prompt generation removes surrounding quotes"""
     from lib.gpt import GPTClient
 
@@ -118,9 +116,7 @@ def test_generate_origami_prompts_handles_various_formats(
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_simple_prompt_handles_exception(
-    mock_openai: Mock, mock_env_vars: None
-) -> None:
+def test_generate_simple_prompt_handles_exception(mock_openai: Mock, mock_env_vars: None) -> None:
     """Test simple prompt generation handles API exceptions"""
     from lib.gpt import GPTClient
 
@@ -135,9 +131,7 @@ def test_generate_simple_prompt_handles_exception(
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_origami_prompts_handles_exception(
-    mock_openai: Mock, mock_env_vars: None
-) -> None:
+def test_generate_origami_prompts_handles_exception(mock_openai: Mock, mock_env_vars: None) -> None:
     """Test origami prompt generation handles API exceptions"""
     from lib.gpt import GPTClient
 

@@ -66,9 +66,7 @@ def test_generate_image_api_error(mock_post: Mock, mock_env_vars: None) -> None:
 
 
 @patch("lib.deepai.requests.get")
-def test_download_image_success(
-    mock_get: Mock, mock_env_vars: None, tmp_path: Path
-) -> None:
+def test_download_image_success(mock_get: Mock, mock_env_vars: None, tmp_path: Path) -> None:
     """Test successful image download"""
     from lib.deepai import DeepAIClient
 
@@ -88,9 +86,7 @@ def test_download_image_success(
 
 
 @patch("lib.deepai.requests.get")
-def test_download_image_failure(
-    mock_get: Mock, mock_env_vars: None, tmp_path: Path
-) -> None:
+def test_download_image_failure(mock_get: Mock, mock_env_vars: None, tmp_path: Path) -> None:
     """Test image download failure"""
     from lib.deepai import DeepAIClient
 
@@ -125,9 +121,7 @@ def test_generate_and_save_success(
 
     assert result is True
     mock_generate.assert_called_once_with("test prompt", 1024, 512, "standard")
-    mock_download.assert_called_once_with(
-        "https://example.com/generated.jpg", output_path
-    )
+    mock_download.assert_called_once_with("https://example.com/generated.jpg", output_path)
 
 
 @patch("lib.deepai.DeepAIClient.generate_image")

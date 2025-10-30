@@ -137,9 +137,7 @@ def test_generate_batch_output_paths() -> None:
     count = 3
     timestamp = "20251030_143022"
 
-    paths = OutputHandler.generate_batch_output_paths(
-        input_file, output_dir, count, timestamp
-    )
+    paths = OutputHandler.generate_batch_output_paths(input_file, output_dir, count, timestamp)
 
     assert len(paths) == 3
     assert paths[0] == Path("/output/my-post_banner_20251030_143022_01.png")
@@ -173,9 +171,7 @@ def test_generate_batch_output_paths_large_count() -> None:
     count = 10
     timestamp = "20251030_120000"
 
-    paths = OutputHandler.generate_batch_output_paths(
-        input_file, output_dir, count, timestamp
-    )
+    paths = OutputHandler.generate_batch_output_paths(input_file, output_dir, count, timestamp)
 
     assert len(paths) == 10
     # Check sequential numbering with zero padding

@@ -16,28 +16,18 @@ class Settings(BaseSettings):
 
     # OpenAI Configuration
     openai_model: str = Field("gpt-4o", description="OpenAI model to use")
-    openai_temperature: float = Field(
-        0.9, ge=0.0, le=2.0, description="Temperature for prompts"
-    )
-    openai_max_tokens: int = Field(
-        1000, ge=1, le=4000, description="Max tokens for responses"
-    )
+    openai_temperature: float = Field(0.9, ge=0.0, le=2.0, description="Temperature for prompts")
+    openai_max_tokens: int = Field(1000, ge=1, le=4000, description="Max tokens for responses")
 
     # DeepAI Configuration
     deepai_api_url: str = "https://api.deepai.org/api/text2img"
-    deepai_timeout: int = Field(
-        60, ge=10, le=300, description="Request timeout in seconds"
-    )
+    deepai_timeout: int = Field(60, ge=10, le=300, description="Request timeout in seconds")
 
     # Application Defaults
     default_input_dir: Path = Path("./posts")
     default_output_dir: Path = Path("./banners")
-    default_width: int = Field(
-        1024, ge=128, le=1536, description="Default banner width"
-    )
-    default_height: int = Field(
-        512, ge=128, le=1536, description="Default banner height"
-    )
+    default_width: int = Field(1024, ge=128, le=1536, description="Default banner width")
+    default_height: int = Field(512, ge=128, le=1536, description="Default banner height")
     default_style: Literal["simple", "origami"] = "origami"
     default_version: Literal["standard", "hd", "genius"] = "standard"
 

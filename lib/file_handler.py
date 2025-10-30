@@ -67,9 +67,7 @@ class OutputHandler:
     """Handles output file organization"""
 
     @staticmethod
-    def generate_output_path(
-        input_file: Path, output_dir: Path, suffix: str = "_banner"
-    ) -> Path:
+    def generate_output_path(input_file: Path, output_dir: Path, suffix: str = "_banner") -> Path:
         """Generate output path from input file
 
         Args:
