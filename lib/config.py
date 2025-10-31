@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     # Application Defaults
     default_input_dir: Path = Path("./posts")
     default_output_dir: Path = Path("./banners")
-    default_width: int = Field(1536, ge=128, le=1536, description="Default banner width")
-    default_height: int = Field(512, ge=128, le=1536, description="Default banner height")
+    default_width: int = Field(1792, ge=128, le=2048, description="Default banner width")
+    default_height: int = Field(1024, ge=128, le=2048, description="Default banner height")
     default_style: Literal["simple", "origami"] = "origami"
     default_version: Literal["standard", "hd", "genius"] = "standard"
 

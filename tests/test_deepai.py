@@ -41,12 +41,11 @@ def test_generate_image_success(mock_post: Mock, mock_env_vars: None) -> None:
     assert url == "https://example.com/image.jpg"
     mock_post.assert_called_once()
 
-    # Verify API call parameters - width/height no longer sent to DeepAI
+    # Verify API call parameters
     call_args = mock_post.call_args
     assert call_args[1]["data"]["text"] == "test prompt"
-    # Note: width/height parameters removed as DeepAI doesn't support them
-    assert "width" not in call_args[1]["data"]
-    assert "height" not in call_args[1]["data"]
+    assert call_args[1]["data"]["width"] == "1024"
+    assert call_args[1]["data"]["height"] == "512"
 
 
 @patch("lib.deepai.requests.post")
@@ -120,8 +119,8 @@ def test_generate_and_save_success(
     result = client.generate_and_save("test prompt", output_path)
 
     assert result is True
-    # Updated to match new default width of 1536
-    mock_generate.assert_called_once_with("test prompt", 1536, 512, "standard")
+    # Updated to match new default resolution of 1792x1024
+    mock_generate.assert_called_once_with("test prompt", 1792, 1024, "standard")
     mock_download.assert_called_once_with("https://example.com/generated.jpg", output_path)
 
 

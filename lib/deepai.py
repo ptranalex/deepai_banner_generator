@@ -27,8 +27,8 @@ class DeepAIClient:
     def generate_image(
         self,
         prompt: str,
-        width: int = 1536,
-        height: int = 512,
+        width: int = 1792,
+        height: int = 1024,
         version: Literal["standard", "hd", "genius"] = "standard",
     ) -> str | None:
         """Generate image and return URL
@@ -37,7 +37,7 @@ class DeepAIClient:
             prompt: Text prompt for image generation
             width: Image width in pixels
             height: Image height in pixels
-            version: Generation version
+            version: Generation version (case-insensitive, will be capitalized)
 
         Returns:
             Image URL if successful, None otherwise
@@ -46,24 +46,16 @@ class DeepAIClient:
 
         headers = {"api-key": self.api_key}
 
-        # Start with basic data - DeepAI may not support all parameters
-        data = {"text": prompt}
+        # Build request data
+        data = {
+            "text": prompt,
+            "width": str(width),
+            "height": str(height),
+        }
 
-        # Try adding dimensions (may not be supported by all DeepAI endpoints)
-        # Some endpoints only support 512x512
-        if width != 512 or height != 512:
-            logger.warning(
-                f"Attempting custom dimensions {width}x{height}. "
-                "DeepAI may only support 512x512 or specific sizes."
-            )
-
-        # Note: width/height might not be supported - commenting out for now
-        # data["width"] = str(width)
-        # data["height"] = str(height)
-
-        # image_generator_version parameter might not be supported
-        # if version != "standard":
-        #     data["image_generator_version"] = version
+        # DeepAI requires capitalized version names: "Standard", "Hd", "Genius"
+        if version != "standard":
+            data["image_generator_version"] = version.capitalize()
 
         # Debug logging
         logger.debug(f"API URL: {self.api_url}")
@@ -126,8 +118,8 @@ class DeepAIClient:
         self,
         prompt: str,
         output_path: Path,
-        width: int = 1536,
-        height: int = 512,
+        width: int = 1792,
+        height: int = 1024,
         version: Literal["standard", "hd", "genius"] = "standard",
     ) -> bool:
         """Generate and save image in one call
