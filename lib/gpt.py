@@ -6,6 +6,7 @@ from openai import OpenAI
 
 from lib.config import get_settings
 from lib.logger import logger
+from lib.prompts import get_prompt_loader
 
 
 class GPTClient:
@@ -23,6 +24,7 @@ class GPTClient:
         self.model = settings.openai_model
         self.temperature = settings.openai_temperature
         self.max_tokens = settings.openai_max_tokens
+        self.prompt_loader = get_prompt_loader()
         logger.info(f"Initialized GPT client with model: {self.model}")
 
     def generate_simple_prompt(self, title: str, content: str) -> str:
@@ -37,22 +39,13 @@ class GPTClient:
         """
         logger.info(f"Generating simple prompt for: {title}")
 
+        # Load prompts from YAML
+        system_prompt, user_template = self.prompt_loader.get_simple_prompts()
+        user_prompt = self.prompt_loader.format_user_prompt(user_template, title, content)
+
         messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a creative prompt generator that turns full blog posts "
-                    "into vivid image prompts for DeepAI. Focus on mood, emotion, and symbolic visuals."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Title: {title}\n\n"
-                    f"Blog:\n{content}\n\n"
-                    f"Generate one concise image prompt for DeepAI (suitable for a banner)."
-                ),
-            },
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
         ]
 
         try:
@@ -87,29 +80,12 @@ class GPTClient:
         """
         logger.info(f"Generating origami prompts for: {title}")
 
-        system_msg = {
-            "role": "system",
-            "content": (
-                "You are a creative image prompt generator for DeepAI's 3D Origamic style. "
-                "Given a blog title and full content, create 10 unique, vivid prompts suitable for banner images. "
-                "Each prompt should: "
-                "1) Capture the blog's emotion and theme, "
-                "2) Use 3D origami, paper folds, or transformation as metaphors, "
-                "3) Describe soft pastel colors and cinematic composition, "
-                "4) Avoid text or captions, "
-                "5) Be concise and art-directable. "
-                "Output format: a clean numbered list of 10 prompts. No commentary."
-            ),
-        }
+        # Load prompts from YAML
+        system_prompt, user_template = self.prompt_loader.get_origami_prompts()
+        user_prompt = self.prompt_loader.format_user_prompt(user_template, title, content)
 
-        user_msg = {
-            "role": "user",
-            "content": (
-                f"Title: {title}\n\n"
-                f"Full blog content:\n{content}\n\n"
-                f"Generate 10 creative 3D origamic prompts now."
-            ),
-        }
+        system_msg = {"role": "system", "content": system_prompt}
+        user_msg = {"role": "user", "content": user_prompt}
 
         try:
             response = self.client.chat.completions.create(

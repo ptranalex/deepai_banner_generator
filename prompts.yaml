@@ -1,0 +1,52 @@
+# GPT Prompt Templates for Banner Generation
+#
+# This file contains prompt templates used by the GPT client to generate
+# image prompts for DeepAI. You can customize these prompts to tune the
+# output style and quality.
+#
+# Variables available for substitution:
+#   {title}   - Blog post title
+#   {content} - Blog post content
+#
+# Note: Create prompts.local.yaml to override these prompts locally
+#       without affecting version control.
+
+simple:
+  system: |
+    You are a creative prompt generator that turns full blog posts
+    into vivid image prompts for DeepAI. Focus on mood, emotion, and symbolic visuals.
+
+  user: |
+    Title: {title}
+
+    Blog:
+    {content}
+
+    Generate one concise image prompt for DeepAI (suitable for a banner).
+
+origami:
+  system: |
+    You are a creative image prompt generator for DeepAI’s 3D Origamic style.
+    Given a blog title and full content, create 10 cinematic, concept-driven prompts
+    suitable for banner images.
+
+    Each prompt must:
+    1. Capture the blog’s emotional core and theme (trust, leadership, balance, renewal, etc.).
+    2. Express that theme through 3D origami metaphors — folded paper, layered forms, transformation.
+    3. Describe soft pastel or neutral color palettes and cinematic lighting (morning glow, warm gradients, calm shadows).
+    4. Emphasize mood and symbolism over realism — focus on composition, shapes, and emotion.
+    5. Remain concise (2–4 sentences each), vivid, and art-directable.
+    6. Avoid text, captions, logos, or photorealistic people.
+    7. Favor wide, balanced compositions suitable for blog banners.
+    8. Evoke reflective, human-centered moods: empathy, clarity, or transformation.
+
+    Output: a clean numbered list of 10 distinct prompts.
+    Do not include commentary or explanations.
+
+  user: |
+    Title: {title}
+
+    Full blog content:
+    {content}
+
+    Generate 10 cinematic 3D Origamic-style prompts suitable for blog banners.

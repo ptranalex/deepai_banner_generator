@@ -36,3 +36,6 @@ posts/*
 !posts/.gitkeep
 *.png
 !docs/**/*.png
+
+# Local prompt overrides
+prompts.local.yaml

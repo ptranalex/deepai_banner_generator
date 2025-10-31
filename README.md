@@ -3,8 +3,8 @@
 Modern AI-powered banner generator for blog posts with clean architecture, type safety, and comprehensive testing.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-31%20passed-green.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)](htmlcov/)
+[![Tests](https://img.shields.io/badge/tests-53%20passed-green.svg)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen.svg)](htmlcov/)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 ## ✨ Features
@@ -14,7 +14,8 @@ Modern AI-powered banner generator for blog posts with clean architecture, type 
 - 🖼️ **DeepAI Integration**: High-quality image generation with multiple quality levels
 - 📝 **Markdown Support**: Parse blog posts with YAML front matter
 - 🎯 **Type-Safe**: Full type hints with mypy checking
-- 🧪 **Tested**: 93% test coverage with pytest
+- 🧪 **Tested**: 94% test coverage with pytest
+- 🎯 **Customizable Prompts**: YAML-based prompt templates for easy tuning
 - 🎭 **Beautiful CLI**: Rich terminal output with Typer
 - 🔒 **Secure**: Pydantic settings, no hardcoded credentials
 - 📊 **Logging**: Structured logging with Loguru
@@ -167,6 +168,46 @@ python chain_banner.py generate \
   --deepai-key "..."
 ```
 
+### Customizing GPT Prompts
+
+The tool uses YAML-based prompt templates that you can customize without touching code:
+
+```bash
+# View default prompts
+cat prompts.yaml
+
+# Create local override (not tracked in git)
+cp prompts.yaml prompts.local.yaml
+nano prompts.local.yaml
+```
+
+Example `prompts.yaml` structure:
+
+```yaml
+simple:
+  system: |
+    You are a creative prompt generator...
+  user: |
+    Title: {title}
+    Blog: {content}
+    Generate one concise image prompt.
+
+origami:
+  system: |
+    You are a creative image prompt generator for 3D Origamic style...
+  user: |
+    Title: {title}
+    Full blog content: {content}
+    Generate 10 creative 3D origamic prompts.
+```
+
+**Tips for tuning prompts:**
+
+- Edit `prompts.local.yaml` to experiment without affecting version control
+- Use `{title}` and `{content}` placeholders for blog post data
+- Adjust system prompts to change the AI's behavior and style
+- Modify user prompts to change what information is sent to GPT
+
 ## 📋 Command Reference
 
 ### Generate Command
@@ -210,13 +251,16 @@ deepai_sandbox/
 │   ├── logger.py          # Loguru logging setup
 │   ├── gpt.py             # OpenAI GPT client
 │   ├── deepai.py          # DeepAI API client
+│   ├── prompts.py         # YAML prompt loader
 │   └── file_handler.py    # Markdown & file operations
-├── tests/                  # Pytest test suite (93% coverage)
+├── tests/                  # Pytest test suite (94% coverage)
 │   ├── test_config.py
 │   ├── test_gpt.py
 │   ├── test_deepai.py
+│   ├── test_prompts.py
 │   └── test_file_handler.py
 ├── chain_banner.py         # Main Typer CLI
+├── prompts.yaml            # GPT prompt templates
 ├── .env.example            # Configuration template
 ├── pyproject.toml          # Tool configurations
 └── requirements.txt        # Production dependencies
@@ -332,18 +376,19 @@ Invalid examples: 1000, 2000
 
 ## 📊 Test Coverage
 
-Current test coverage: **93%**
+Current test coverage: **94%**
 
 ```
 Name                  Stmts   Miss  Cover
 -------------------------------------------
 lib/config.py            31      0   100%
-lib/deepai.py            49      6    88%
-lib/file_handler.py      38      5    87%
-lib/gpt.py               53      1    98%
+lib/deepai.py            56      7    88%
+lib/file_handler.py      48      5    90%
+lib/gpt.py               63      3    95%
 lib/logger.py             9      0   100%
+lib/prompts.py           51      3    94%
 -------------------------------------------
-TOTAL                   182     12    93%
+TOTAL                   293     19    94%
 ```
 
 ## 🛠️ Tech Stack
