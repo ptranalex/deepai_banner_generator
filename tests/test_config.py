@@ -31,7 +31,7 @@ def test_settings_default_values(mock_env_vars: None) -> None:
     settings = Settings()  # type: ignore[call-arg]
     assert settings.openai_model == "gpt-4o"
     assert settings.openai_temperature == 0.9
-    assert settings.default_width == 1024
+    assert settings.default_width == 1536  # Updated to match new default
     assert settings.default_height == 512
     assert settings.default_style == "origami"
 

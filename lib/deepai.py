@@ -27,7 +27,7 @@ class DeepAIClient:
     def generate_image(
         self,
         prompt: str,
-        width: int = 1024,
+        width: int = 1536,
         height: int = 512,
         version: Literal["standard", "hd", "genius"] = "standard",
     ) -> str | None:
@@ -45,12 +45,31 @@ class DeepAIClient:
         logger.info(f"Generating image with prompt: {prompt[:50]}...")
 
         headers = {"api-key": self.api_key}
-        data = {
-            "text": prompt,
-            "width": str(width),
-            "height": str(height),
-            "image_generator_version": version,
-        }
+
+        # Start with basic data - DeepAI may not support all parameters
+        data = {"text": prompt}
+
+        # Try adding dimensions (may not be supported by all DeepAI endpoints)
+        # Some endpoints only support 512x512
+        if width != 512 or height != 512:
+            logger.warning(
+                f"Attempting custom dimensions {width}x{height}. "
+                "DeepAI may only support 512x512 or specific sizes."
+            )
+
+        # Note: width/height might not be supported - commenting out for now
+        # data["width"] = str(width)
+        # data["height"] = str(height)
+
+        # image_generator_version parameter might not be supported
+        # if version != "standard":
+        #     data["image_generator_version"] = version
+
+        # Debug logging
+        logger.debug(f"API URL: {self.api_url}")
+        logger.debug(f"Request data: {data}")
+        logger.debug(f"Requested dimensions: {width}x{height}, version: {version}")
+        logger.debug(f"Full prompt: {prompt}")
 
         try:
             response = requests.post(
@@ -69,6 +88,7 @@ class DeepAIClient:
                 logger.error(
                     f"API request failed with status {response.status_code}: {response.text}"
                 )
+                logger.error(f"Request parameters: {data}")
                 return None
 
         except requests.RequestException as e:
@@ -106,7 +126,7 @@ class DeepAIClient:
         self,
         prompt: str,
         output_path: Path,
-        width: int = 1024,
+        width: int = 1536,
         height: int = 512,
         version: Literal["standard", "hd", "genius"] = "standard",
     ) -> bool:

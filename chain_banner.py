@@ -206,7 +206,7 @@ def generate(
         help="Prompt generation style",
     ),
     width: int = typer.Option(
-        1024,
+        1536,
         "--width",
         "-w",
         min=128,
@@ -222,7 +222,7 @@ def generate(
         help="Banner height (must be multiple of 32)",
     ),
     version: Version = typer.Option(
-        Version.standard,
+        Version.genius,
         "--version",
         "-v",
         help="DeepAI image generator version",
@@ -436,7 +436,7 @@ def direct(
         help="Output file path",
     ),
     width: int = typer.Option(
-        1024,
+        1536,
         "--width",
         "-w",
         min=128,
