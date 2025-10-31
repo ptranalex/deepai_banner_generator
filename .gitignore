@@ -40,3 +40,6 @@ posts/*
 # Local prompt and style overrides
 prompts.local.yaml
 deepai_styles.local.yaml
+
+# Implementation notes
+IMPLEMENTATION_SUMMARY.md

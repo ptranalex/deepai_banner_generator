@@ -166,6 +166,10 @@ OPENAI_TEMPERATURE=0.9
 DEEPAI_API_KEY=your-deepai-key-here
 DEEPAI_TIMEOUT=60
 
+# DeepAI Retry Configuration (optional)
+DEEPAI_MAX_RETRIES=3
+DEEPAI_RETRY_BASE_DELAY=2
+
 # Optional overrides
 DEFAULT_INPUT_DIR=./posts
 DEFAULT_OUTPUT_DIR=./banners
@@ -240,6 +244,44 @@ This allows you to:
 - Modify style descriptions to better guide GPT
 - Add default parameters for specific styles
 - Create custom style configurations
+
+### Error Handling & Retry Logic
+
+The application includes robust error handling with automatic retry logic for transient API failures:
+
+**Default Behavior:**
+
+- Automatically retries failed API requests up to 3 times
+- Uses exponential backoff: 2s → 4s → 8s between retries
+- Logs detailed information including request IDs, timing, and attempt numbers
+- Continues processing remaining images in batch mode when individual requests fail
+
+**Configurable via Environment Variables:**
+
+```bash
+# Maximum number of retry attempts (1-5)
+DEEPAI_MAX_RETRIES=3
+
+# Base delay in seconds for exponential backoff (1-10)
+DEEPAI_RETRY_BASE_DELAY=2
+```
+
+**What Gets Logged:**
+
+- Request ID for tracing individual API calls
+- Prompt character length (may correlate with failures)
+- Timing metrics for each attempt
+- Detailed error messages and response data
+- Success rate and failure summaries in batch mode
+
+**Batch Processing:**
+
+- Failed images are tracked and reported at the end
+- Success rate is calculated and displayed
+- Batch continues even if individual images fail
+- All failed prompts are shown with preview text
+
+This approach handles DeepAI's occasional unreliability gracefully while providing full visibility into what succeeded and what failed.
 
 ## 📋 Command Reference
 

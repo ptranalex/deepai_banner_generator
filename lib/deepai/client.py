@@ -1,5 +1,7 @@
 """DeepAI client for image generation"""
 
+import time
+import uuid
 from pathlib import Path
 from typing import Any, Literal
 
@@ -23,6 +25,8 @@ class DeepAIClient:
         self.api_key = api_key or settings.deepai_api_key
         self.base_api_url = "https://api.deepai.org/api"
         self.timeout = settings.deepai_timeout
+        self.max_retries = settings.deepai_max_retries
+        self.retry_base_delay = settings.deepai_retry_base_delay
         self.style_loader = get_style_loader()
         logger.info("Initialized DeepAI client")
 
@@ -48,12 +52,21 @@ class DeepAIClient:
         Returns:
             Image URL if successful, None otherwise
         """
-        logger.info(f"Generating image with style '{deepai_style}': {prompt[:50]}...")
+        # Generate request ID for tracing
+        request_id = str(uuid.uuid4())[:8]
+        prompt_length = len(prompt)
+
+        logger.info(
+            f"[{request_id}] Generating image with style '{deepai_style}' "
+            f"(prompt: {prompt_length} chars): {prompt[:50]}..."
+        )
 
         # Load style configuration
         style = self.style_loader.get_style(deepai_style)
         if not style:
-            logger.warning(f"Unknown style '{deepai_style}', falling back to text2img")
+            logger.warning(
+                f"[{request_id}] Unknown style '{deepai_style}', falling back to text2img"
+            )
             endpoint = "text2img"
             default_params = {}
         else:
@@ -99,34 +112,66 @@ class DeepAIClient:
                         data["genius_preference"] = "classic"
 
         # Debug logging
-        logger.debug(f"API URL: {api_url}")
-        logger.debug(f"Style: {style.name if style else 'text2img'}")
-        logger.debug(f"Request data: {data}")
-        logger.debug(f"Full prompt: {prompt}")
+        logger.debug(f"[{request_id}] API URL: {api_url}")
+        logger.debug(f"[{request_id}] Style: {style.name if style else 'text2img'}")
+        logger.debug(f"[{request_id}] Request data: {data}")
 
-        try:
-            response = requests.post(
-                api_url,
-                headers=headers,
-                data=data,
-                timeout=self.timeout,
-            )
+        # Retry loop with exponential backoff
+        for attempt in range(1, self.max_retries + 1):
+            start_time = time.time()
 
-            if response.status_code == 200:
-                result = response.json()
-                image_url: str | None = result.get("output_url")
-                logger.info(f"Image generated successfully: {image_url}")
-                return image_url
-            else:
-                logger.error(
-                    f"API request failed with status {response.status_code}: {response.text}"
+            try:
+                response = requests.post(
+                    api_url,
+                    headers=headers,
+                    data=data,
+                    timeout=self.timeout,
                 )
-                logger.error(f"Request parameters: {data}")
-                return None
 
-        except requests.RequestException as e:
-            logger.error(f"Request exception during image generation: {e}")
-            return None
+                elapsed = time.time() - start_time
+
+                if response.status_code == 200:
+                    result = response.json()
+                    image_url: str | None = result.get("output_url")
+                    logger.info(
+                        f"[{request_id}] Image generated successfully in {elapsed:.1f}s "
+                        f"(attempt {attempt}/{self.max_retries}): {image_url}"
+                    )
+                    return image_url
+                else:
+                    logger.warning(
+                        f"[{request_id}] API request failed (attempt {attempt}/{self.max_retries}) "
+                        f"after {elapsed:.1f}s - Status {response.status_code}: {response.text}"
+                    )
+
+                    if attempt < self.max_retries:
+                        delay = self.retry_base_delay * (2 ** (attempt - 1))
+                        logger.info(f"[{request_id}] Retrying in {delay}s...")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"[{request_id}] All {self.max_retries} attempts failed")
+                        logger.error(f"[{request_id}] Final response: {response.text}")
+                        logger.error(f"[{request_id}] Request parameters: {data}")
+                        return None
+
+            except requests.RequestException as e:
+                elapsed = time.time() - start_time
+                logger.warning(
+                    f"[{request_id}] Request exception (attempt {attempt}/{self.max_retries}) "
+                    f"after {elapsed:.1f}s: {e}"
+                )
+
+                if attempt < self.max_retries:
+                    delay = self.retry_base_delay * (2 ** (attempt - 1))
+                    logger.info(f"[{request_id}] Retrying in {delay}s...")
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"[{request_id}] All {self.max_retries} attempts failed due to exceptions"
+                    )
+                    return None
+
+        return None
 
     def download_image(self, url: str, output_path: Path) -> bool:
         """Download image from URL to file

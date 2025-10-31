@@ -472,6 +472,7 @@ def generate(
 
             successful = 0
             failed = 0
+            failed_prompts = []
 
             for prompt, output_path in zip(banner_prompts, output_paths, strict=False):
                 progress.update(task, description=f"Generating {output_path.name}...")
@@ -491,10 +492,11 @@ def generate(
                 else:
                     console.print(f"  ✗ [red]{output_path.name}[/red]")
                     failed += 1
+                    failed_prompts.append((output_path.name, prompt[:60]))
 
                 progress.advance(task)
 
-        # Summary
+        # Enhanced summary
         if len(banner_prompts) == 1:
             if successful:
                 console.print(
@@ -504,11 +506,18 @@ def generate(
                 console.print("\n[red]❌ Banner generation failed.[/red]")
                 raise typer.Exit(1)
         else:
-            console.print(
-                f"\n✨ [bold green]Batch complete![/bold green] "
-                f"✓ {successful} successful, ✗ {failed} failed"
-            )
-            console.print(f"[cyan]Output directory: {output_dir}[/cyan]")
+            total = successful + failed
+            success_rate = (successful / total * 100) if total > 0 else 0
+
+            console.print("\n✨ [bold green]Batch complete![/bold green]")
+            console.print(f"  ✓ {successful} successful, ✗ {failed} failed")
+            console.print(f"  Success rate: {success_rate:.1f}%")
+            console.print(f"  [cyan]Output directory: {output_dir}[/cyan]")
+
+            if failed_prompts:
+                console.print("\n[yellow]Failed images:[/yellow]")
+                for name, prompt_preview in failed_prompts:
+                    console.print(f"  • {name}: {prompt_preview}...")
 
 
 @app.command()

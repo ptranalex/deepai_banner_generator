@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     # DeepAI Configuration
     deepai_api_url: str = "https://api.deepai.org/api/text2img"
     deepai_timeout: int = Field(60, ge=10, le=300, description="Request timeout in seconds")
+    deepai_max_retries: int = Field(
+        3, ge=1, le=5, description="Max retry attempts for DeepAI API calls"
+    )
+    deepai_retry_base_delay: int = Field(
+        2, ge=1, le=10, description="Base delay in seconds for exponential backoff"
+    )
 
     # Application Defaults
     default_input_dir: Path = Path("./posts")
