@@ -14,7 +14,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from lib.config import get_settings
-from lib.deepai import DeepAIClient
+from lib.deepai import DeepAIClient, get_style_loader
 from lib.file_handler import MarkdownHandler, OutputHandler
 from lib.gpt import GPTClient
 from lib.selection_parser import parse_selection
@@ -27,19 +27,73 @@ app = typer.Typer(
 console = Console()
 
 
-class Style(str, Enum):
-    """Prompt generation style options"""
-
-    simple = "simple"
-    origami = "origami"
-
-
 class Version(str, Enum):
     """DeepAI generator version options"""
 
     standard = "standard"
     hd = "hd"
     genius = "genius"
+
+
+def interactive_select_style(default_slug: str = "origami-3d-generator") -> str:
+    """Display styles and let user select one interactively
+
+    Args:
+        default_slug: Default style slug to pre-select
+
+    Returns:
+        Selected style slug
+    """
+    loader = get_style_loader()
+    styles = loader.list_styles()
+
+    if not styles:
+        console.print("[red]No styles found in configuration.[/red]")
+        raise typer.Exit(1)
+
+    # Create a table for style selection
+    table = Table(title="🎨 Select DeepAI Image Generation Style", show_header=True)
+    table.add_column("#", style="cyan", width=4)
+    table.add_column("Style Name", style="green")
+    table.add_column("Description", style="dim", max_width=60)
+
+    # Find default index
+    default_index = 0
+    for idx, style in enumerate(styles, 1):
+        if style.slug == default_slug:
+            default_index = idx
+        table.add_row(
+            str(idx),
+            f"{'[bold]' if style.slug == default_slug else ''}{style.name}{'[/bold]' if style.slug == default_slug else ''}",
+            (style.description[:57] + "..." if len(style.description) > 60 else style.description),
+        )
+
+    console.print(table)
+    console.print(f"\n[dim]Default: #{default_index} - {styles[default_index - 1].name}[/dim]")
+
+    # Get user selection
+    while True:
+        selection = console.input(
+            "\n[bold cyan]Select style number (or press Enter for default):[/bold cyan] "
+        ).strip()
+
+        # Use default if empty
+        if not selection:
+            selected_style = styles[default_index - 1]
+            break
+
+        # Validate selection
+        try:
+            idx = int(selection)
+            if 1 <= idx <= len(styles):
+                selected_style = styles[idx - 1]
+                break
+            else:
+                console.print(f"[red]Invalid selection. Please enter 1-{len(styles)}[/red]")
+        except ValueError:
+            console.print("[red]Invalid input. Please enter a number.[/red]")
+
+    return selected_style.slug
 
 
 def interactive_select_file(files: list[Path]) -> Path:
@@ -186,6 +240,38 @@ def interactive_select_prompts(prompts: list[str]) -> list[int]:
 
 
 @app.command()
+def list_styles() -> None:
+    """List all available DeepAI image generation styles"""
+    loader = get_style_loader()
+    styles = loader.list_styles()
+
+    if not styles:
+        console.print("[red]No styles found in configuration.[/red]")
+        raise typer.Exit(1)
+
+    # Create a detailed table
+    table = Table(title="🎨 Available DeepAI Image Generation Styles", show_header=True)
+    table.add_column("#", style="cyan", width=4)
+    table.add_column("Slug", style="yellow", width=30)
+    table.add_column("Name", style="green", width=35)
+    table.add_column("Description", style="dim")
+
+    for idx, style in enumerate(styles, 1):
+        table.add_row(
+            str(idx),
+            style.slug,
+            style.name,
+            style.description,
+        )
+
+    console.print(table)
+    console.print(f"\n[bold]Total: {len(styles)} styles available[/bold]")
+    console.print(
+        "\n[dim]Use --deepai-style <slug> or interactive selection in generate command[/dim]"
+    )
+
+
+@app.command()
 def generate(
     input_dir: Path | None = typer.Option(
         None,
@@ -199,11 +285,19 @@ def generate(
         "-o",
         help="Output directory for generated banners",
     ),
-    style: Style = typer.Option(
-        Style.origami,
-        "--style",
-        "-s",
-        help="Prompt generation style",
+    deepai_style: str | None = typer.Option(
+        None,
+        "--deepai-style",
+        "-ds",
+        help="DeepAI style slug (skips interactive selection)",
+    ),
+    prompt_count: int = typer.Option(
+        10,
+        "--prompt-count",
+        "-pc",
+        min=1,
+        max=20,
+        help="Number of prompts to generate",
     ),
     width: int = typer.Option(
         1792,
@@ -260,6 +354,21 @@ def generate(
         console.print("[red]Error: Width and height must be multiples of 32[/red]")
         raise typer.Exit(1)
 
+    # Interactive style selection if not provided
+    if not deepai_style:
+        console.print("\n")
+        deepai_style = interactive_select_style()
+
+    # Validate the selected style
+    style_loader = get_style_loader()
+    selected_style = style_loader.get_style(deepai_style)
+    if not selected_style:
+        console.print(f"[red]Invalid style: {deepai_style}[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"\n✨ [green]Using style:[/green] {selected_style.name}")
+    console.print(f"[dim]{selected_style.description}[/dim]\n")
+
     # Initialize clients
     try:
         gpt_client = GPTClient(openai_key)
@@ -299,62 +408,37 @@ def generate(
     info_panel = Panel(
         f"[bold]Title:[/bold] {title}\n"
         f"[bold]Tags:[/bold] {', '.join(tags[:5]) if tags else 'None'}\n"
-        f"[bold]Style:[/bold] {style.value}",
+        f"[bold]Style:[/bold] {selected_style.name}",
         title="📄 Post Info",
         border_style="blue",
     )
     console.print(info_panel)
 
-    # Generate prompts based on style
-    banner_prompts: list[str] = []
-
-    if style == Style.origami:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task(
-                "🤖 Asking ChatGPT to create 10 origami-style prompts...", total=None
-            )
-            prompts = gpt_client.generate_origami_prompts(title, body)
-            progress.update(task, completed=True)
-
-        if not prompts:
-            console.print("[red]❌ No prompts generated. Exiting.[/red]")
-            raise typer.Exit(1)
-
-        # Always use multi-select (users can select just one by entering "1")
-        selected_indices = interactive_select_prompts(prompts)
-        banner_prompts = [prompts[i] for i in selected_indices]
-
-    else:  # simple style
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task("🤖 Asking ChatGPT to create a banner prompt...", total=None)
-            banner_prompt = gpt_client.generate_simple_prompt(title, body)
-            progress.update(task, completed=True)
-
-        console.print(
-            Panel(
-                f'[magenta]"{banner_prompt}"[/magenta]',
-                title="💡 Generated Prompt",
-                border_style="magenta",
-            )
+    # Generate prompts using the new unified method
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task(
+            f"🤖 Asking ChatGPT to create {prompt_count} prompts for {selected_style.name}...",
+            total=None,
         )
-
-        # Confirm before generating
-        proceed = (
-            console.input("\n[bold cyan]Generate banner with this prompt? (Y/n):[/bold cyan] ")
-            .strip()
-            .lower()
+        prompts = gpt_client.generate_prompts(
+            title=title,
+            content=body,
+            deepai_style_slug=deepai_style,
+            num_prompts=prompt_count,
         )
-        if proceed and proceed != "y":
-            console.print("[yellow]Cancelled.[/yellow]")
-            raise typer.Exit(0)
+        progress.update(task, completed=True)
+
+    if not prompts:
+        console.print("[red]❌ No prompts generated. Exiting.[/red]")
+        raise typer.Exit(1)
+
+    # Interactive prompt selection
+    selected_indices = interactive_select_prompts(prompts)
+    banner_prompts = [prompts[i] for i in selected_indices]
 
     # Prepare output path(s) - always use batch mode logic
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -395,6 +479,7 @@ def generate(
                 success = deepai_client.generate_and_save(
                     prompt=prompt,
                     output_path=output_path,
+                    deepai_style=deepai_style,
                     width=width,
                     height=height,
                     version=version.value,
@@ -435,6 +520,12 @@ def direct(
         "-o",
         help="Output file path",
     ),
+    deepai_style: str | None = typer.Option(
+        None,
+        "--deepai-style",
+        "-ds",
+        help="DeepAI style slug (skips interactive selection)",
+    ),
     width: int = typer.Option(
         1792,
         "--width",
@@ -471,6 +562,18 @@ def direct(
         console.print("[red]Error: Width and height must be multiples of 32[/red]")
         raise typer.Exit(1)
 
+    # Interactive style selection if not provided
+    if not deepai_style:
+        console.print("\n")
+        deepai_style = interactive_select_style()
+
+    # Validate the selected style
+    style_loader = get_style_loader()
+    selected_style = style_loader.get_style(deepai_style)
+    if not selected_style:
+        console.print(f"[red]Invalid style: {deepai_style}[/red]")
+        raise typer.Exit(1)
+
     # Initialize DeepAI client
     try:
         deepai_client = DeepAIClient(deepai_key)
@@ -488,6 +591,7 @@ def direct(
     console.print(
         Panel(
             f"[bold]Prompt:[/bold] {prompt}\n"
+            f"[bold]Style:[/bold] {selected_style.name}\n"
             f"[bold]Dimensions:[/bold] {width}x{height}\n"
             f"[bold]Version:[/bold] {version.value}\n"
             f"[bold]Output:[/bold] {output}",
@@ -502,6 +606,7 @@ def direct(
     success = deepai_client.generate_and_save(
         prompt=prompt,
         output_path=output,
+        deepai_style=deepai_style,
         width=width,
         height=height,
         version=version.value,

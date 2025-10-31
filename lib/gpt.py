@@ -27,21 +27,54 @@ class GPTClient:
         self.prompt_loader = get_prompt_loader()
         logger.info(f"Initialized GPT client with model: {self.model}")
 
-    def generate_simple_prompt(self, title: str, content: str) -> str:
-        """Generate a single banner prompt
+    def generate_prompts(
+        self,
+        title: str,
+        content: str,
+        deepai_style_slug: str,
+        num_prompts: int = 10,
+    ) -> list[str]:
+        """Generate style-aware banner prompts
 
         Args:
             title: Blog post title
             content: Full blog post content
+            deepai_style_slug: DeepAI style slug (e.g., 'origami-3d-generator')
+            num_prompts: Number of prompts to generate (default: 10)
 
         Returns:
-            Generated prompt string
+            List of generated prompts
         """
-        logger.info(f"Generating simple prompt for: {title}")
+        logger.info(
+            f"Generating {num_prompts} prompts for '{title}' in style '{deepai_style_slug}'"
+        )
 
-        # Load prompts from YAML
-        system_prompt, user_template = self.prompt_loader.get_simple_prompts()
-        user_prompt = self.prompt_loader.format_user_prompt(user_template, title, content)
+        # Get style description from DeepAIStyleLoader
+        from lib.deepai import get_style_loader
+
+        style_loader = get_style_loader()
+        deepai_style = style_loader.get_style(deepai_style_slug)
+        style_description = (
+            deepai_style.description if deepai_style else "General-purpose image generation"
+        )
+
+        # Load base template from YAML
+        prompts_dict = self.prompt_loader._prompts.get("base", {})
+        system_prompt = prompts_dict.get("system", "").strip()
+        user_template = prompts_dict.get("user", "").strip()
+
+        if not system_prompt or not user_template:
+            logger.error("Base template not found in prompts.yaml")
+            raise ValueError("Base template not found in prompts.yaml")
+
+        # Format user prompt with all variables (YAML uses 'count' not 'num_prompts')
+        user_prompt = user_template.format(
+            style=deepai_style_slug,
+            style_description=style_description,
+            title=title,
+            content=content,
+            count=num_prompts,
+        )
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -52,45 +85,6 @@ class GPTClient:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,  # type: ignore[arg-type]
-            )
-
-            prompt = response.choices[0].message.content
-            if not prompt:
-                raise ValueError("Empty response from OpenAI")
-            result = prompt.strip()
-            # Remove quotes if present
-            result = result.strip('"').strip("'")
-            logger.info(f"Generated simple prompt: {result[:50]}...")
-            return result
-
-        except Exception as e:
-            logger.error(f"Error calling OpenAI API: {e}")
-            print(f"Error calling OpenAI API: {e}")
-            sys.exit(1)
-
-    def generate_origami_prompts(self, title: str, content: str) -> list[str]:
-        """Generate 10 origami-style banner prompts
-
-        Args:
-            title: Blog post title
-            content: Full blog post content
-
-        Returns:
-            List of 10 generated prompts
-        """
-        logger.info(f"Generating origami prompts for: {title}")
-
-        # Load prompts from YAML
-        system_prompt, user_template = self.prompt_loader.get_origami_prompts()
-        user_prompt = self.prompt_loader.format_user_prompt(user_template, title, content)
-
-        system_msg = {"role": "system", "content": system_prompt}
-        user_msg = {"role": "user", "content": user_prompt}
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[system_msg, user_msg],  # type: ignore
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )
@@ -105,17 +99,18 @@ class GPTClient:
                 line = line.strip()
                 if not line:
                     continue
-                # Remove leading number and separators like "1.", "1)", "1-" And all quotes
-                for i in range(1, 11):
+                # Remove leading number and separators like "1.", "1)", "1-"
+                for i in range(1, num_prompts + 1):
                     prefixes = [f"{i}.", f"{i})", f"{i} -", f"{i}-"]
                     for prefix in prefixes:
                         if line.startswith(prefix):
                             line = line[len(prefix) :].strip()
                             break
+                # Remove quotes
                 prompts.append(line.strip('" '))
 
-            logger.info(f"Generated {len(prompts)} origami prompts")
-            return prompts[:10]  # Return first 10
+            logger.info(f"Generated {len(prompts)} prompts")
+            return prompts[:num_prompts]  # Return requested count
 
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {e}")

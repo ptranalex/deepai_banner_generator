@@ -37,5 +37,6 @@ posts/*
 *.png
 !docs/**/*.png
 
-# Local prompt overrides
+# Local prompt and style overrides
 prompts.local.yaml
+deepai_styles.local.yaml

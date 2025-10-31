@@ -88,29 +88,41 @@ python chain_banner.py generate \
 
 **Workflow:**
 
-1. 📁 Select a markdown file from your posts directory
-2. 📖 Tool parses the blog post (title, tags, content)
-3. 🤖 ChatGPT generates creative banner prompts
-4. ✨ You select your favorite prompt
-5. 🎨 DeepAI generates the banner image
-6. 💾 Banner saved to output directory
+1. 🎨 Select a DeepAI image generation style (54 styles available!)
+2. 📁 Select a markdown file from your posts directory
+3. 📖 Tool parses the blog post (title, tags, content)
+4. 🤖 ChatGPT generates style-aware banner prompts (configurable count, default 10)
+5. ✨ You select your favorite prompt(s) from the list
+6. 🎨 DeepAI generates the banner image(s)
+7. 💾 Banner(s) saved to output directory
 
 ### Direct Mode
 
 Generate banners with a manual prompt (no AI chain):
 
 ```bash
-# Basic usage
+# Basic usage (uses default style)
 python chain_banner.py direct "A beautiful gradient banner"
 
-# Custom dimensions and output
+# With specific style and custom settings
 python chain_banner.py direct \
   "Modern tech banner with blue gradient" \
+  --deepai-style cyberpunk-generator \
   --output my_banner.png \
-  --width 1920 \
-  --height 600 \
-  --version hd
+  --width 1792 \
+  --height 1024 \
+  --version genius
 ```
+
+### List Styles Command
+
+View all 54 available DeepAI image generation styles:
+
+```bash
+python chain_banner.py list-styles
+```
+
+This displays a table with style names, slugs, and descriptions to help you choose the perfect style for your banners.
 
 ### Help
 
@@ -157,7 +169,10 @@ DEEPAI_TIMEOUT=60
 # Optional overrides
 DEFAULT_INPUT_DIR=./posts
 DEFAULT_OUTPUT_DIR=./banners
-DEFAULT_STYLE=origami
+DEFAULT_WIDTH=1792
+DEFAULT_HEIGHT=1024
+DEFAULT_DEEPAI_STYLE=origami-3d-generator
+DEFAULT_VERSION=genius
 ```
 
 ### Option 3: CLI Arguments
@@ -184,29 +199,47 @@ nano prompts.local.yaml
 Example `prompts.yaml` structure:
 
 ```yaml
-simple:
+base:
   system: |
-    You are a creative prompt generator...
+    You are a creative image prompt generator for DeepAI.
+    Generate vivid, cinematic prompts tailored to specific visual styles.
   user: |
-    Title: {title}
-    Blog: {content}
-    Generate one concise image prompt.
+    Style: {style}
+    Style description: {style_description}
 
-origami:
-  system: |
-    You are a creative image prompt generator for 3D Origamic style...
-  user: |
     Title: {title}
-    Full blog content: {content}
-    Generate 10 creative 3D origamic prompts.
+    Full blog content:
+    {content}
+
+    Generate {count} cinematic prompts in this style.
 ```
 
 **Tips for tuning prompts:**
 
 - Edit `prompts.local.yaml` to experiment without affecting version control
-- Use `{title}` and `{content}` placeholders for blog post data
-- Adjust system prompts to change the AI's behavior and style
-- Modify user prompts to change what information is sent to GPT
+- Available placeholders: `{title}`, `{content}`, `{style}`, `{style_description}`, `{count}`
+- The `base` template is now style-aware and adapts to any DeepAI style
+- Adjust system prompts to change the AI's behavior and tone
+- Modify user prompts to change what information and context is sent to GPT
+
+### Customizing DeepAI Styles
+
+You can also customize DeepAI style configurations:
+
+```bash
+# View all styles
+cat deepai_styles.yaml
+
+# Create local override (not tracked in git)
+cp deepai_styles.yaml deepai_styles.local.yaml
+nano deepai_styles.local.yaml
+```
+
+This allows you to:
+
+- Modify style descriptions to better guide GPT
+- Add default parameters for specific styles
+- Create custom style configurations
 
 ## 📋 Command Reference
 
@@ -216,16 +249,17 @@ origami:
 python chain_banner.py generate [OPTIONS]
 ```
 
-| Option             | Type                   | Default     | Description                              |
-| ------------------ | ---------------------- | ----------- | ---------------------------------------- |
-| `--input-dir, -i`  | Path                   | `./posts`   | Directory with markdown files            |
-| `--output-dir, -o` | Path                   | `./banners` | Output directory for banners             |
-| `--style, -s`      | `simple\|origami`      | `origami`   | Prompt generation style                  |
-| `--width, -w`      | Integer                | `1024`      | Banner width (128-1536, multiple of 32)  |
-| `--height, -h`     | Integer                | `512`       | Banner height (128-1536, multiple of 32) |
-| `--version, -v`    | `standard\|hd\|genius` | `standard`  | DeepAI quality level                     |
-| `--openai-key`     | String                 | -           | OpenAI API key                           |
-| `--deepai-key`     | String                 | -           | DeepAI API key                           |
+| Option                | Type                   | Default                | Description                              |
+| --------------------- | ---------------------- | ---------------------- | ---------------------------------------- |
+| `--input-dir, -i`     | Path                   | `./posts`              | Directory with markdown files            |
+| `--output-dir, -o`    | Path                   | `./banners`            | Output directory for banners             |
+| `--deepai-style, -ds` | String                 | `origami-3d-generator` | DeepAI style slug (use list-styles)      |
+| `--prompt-count, -pc` | Integer (1-20)         | `10`                   | Number of prompts to generate            |
+| `--width, -w`         | Integer                | `1792`                 | Banner width (128-2048, multiple of 32)  |
+| `--height, -h`        | Integer                | `1024`                 | Banner height (128-2048, multiple of 32) |
+| `--version, -v`       | `standard\|hd\|genius` | `genius`               | DeepAI quality level                     |
+| `--openai-key`        | String                 | -                      | OpenAI API key                           |
+| `--deepai-key`        | String                 | -                      | DeepAI API key                           |
 
 ### Direct Command
 

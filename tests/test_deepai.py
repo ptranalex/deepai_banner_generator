@@ -11,7 +11,7 @@ def test_deepai_client_initialization(mock_env_vars: None) -> None:
     client = DeepAIClient()
 
     assert client.api_key.startswith("test-deepai")
-    assert client.api_url == "https://api.deepai.org/api/text2img"
+    assert client.base_api_url == "https://api.deepai.org/api"
     assert client.timeout == 60
 
 
@@ -25,9 +25,9 @@ def test_deepai_client_custom_api_key() -> None:
     assert client.api_key == custom_key
 
 
-@patch("lib.deepai.requests.post")
+@patch("lib.deepai.client.requests.post")
 def test_generate_image_success(mock_post: Mock, mock_env_vars: None) -> None:
-    """Test successful image generation"""
+    """Test successful image generation with default style"""
     from lib.deepai import DeepAIClient
 
     mock_response = Mock()
@@ -36,7 +36,9 @@ def test_generate_image_success(mock_post: Mock, mock_env_vars: None) -> None:
     mock_post.return_value = mock_response
 
     client = DeepAIClient()
-    url = client.generate_image("test prompt", width=1024, height=512)
+    url = client.generate_image(
+        "test prompt", deepai_style="origami-3d-generator", width=1792, height=1024
+    )
 
     assert url == "https://example.com/image.jpg"
     mock_post.assert_called_once()
@@ -44,11 +46,13 @@ def test_generate_image_success(mock_post: Mock, mock_env_vars: None) -> None:
     # Verify API call parameters
     call_args = mock_post.call_args
     assert call_args[1]["data"]["text"] == "test prompt"
-    assert call_args[1]["data"]["width"] == "1024"
-    assert call_args[1]["data"]["height"] == "512"
+    assert call_args[1]["data"]["width"] == "1792"
+    assert call_args[1]["data"]["height"] == "1024"
+    # Check URL includes the style endpoint
+    assert "origami-3d-generator" in call_args[0][0]
 
 
-@patch("lib.deepai.requests.post")
+@patch("lib.deepai.client.requests.post")
 def test_generate_image_api_error(mock_post: Mock, mock_env_vars: None) -> None:
     """Test image generation with API error"""
     from lib.deepai import DeepAIClient
@@ -64,7 +68,7 @@ def test_generate_image_api_error(mock_post: Mock, mock_env_vars: None) -> None:
     assert url is None
 
 
-@patch("lib.deepai.requests.get")
+@patch("lib.deepai.client.requests.get")
 def test_download_image_success(mock_get: Mock, mock_env_vars: None, tmp_path: Path) -> None:
     """Test successful image download"""
     from lib.deepai import DeepAIClient
@@ -84,7 +88,7 @@ def test_download_image_success(mock_get: Mock, mock_env_vars: None, tmp_path: P
     assert output_path.read_bytes() == b"fake image data"
 
 
-@patch("lib.deepai.requests.get")
+@patch("lib.deepai.client.requests.get")
 def test_download_image_failure(mock_get: Mock, mock_env_vars: None, tmp_path: Path) -> None:
     """Test image download failure"""
     from lib.deepai import DeepAIClient
@@ -116,11 +120,15 @@ def test_generate_and_save_success(
     client = DeepAIClient()
     output_path = tmp_path / "banner.png"
 
-    result = client.generate_and_save("test prompt", output_path)
+    result = client.generate_and_save(
+        "test prompt", output_path, deepai_style="origami-3d-generator"
+    )
 
     assert result is True
-    # Updated to match new default resolution of 1792x1024
-    mock_generate.assert_called_once_with("test prompt", 1792, 1024, "standard")
+    # Updated to match new default resolution and deepai_style parameter
+    mock_generate.assert_called_once_with(
+        "test prompt", "origami-3d-generator", 1792, 1024, "standard"
+    )
     mock_download.assert_called_once_with("https://example.com/generated.jpg", output_path)
 
 
@@ -136,6 +144,8 @@ def test_generate_and_save_generation_fails(
     client = DeepAIClient()
     output_path = tmp_path / "banner.png"
 
-    result = client.generate_and_save("test prompt", output_path)
+    result = client.generate_and_save(
+        "test prompt", output_path, deepai_style="origami-3d-generator"
+    )
 
     assert result is False

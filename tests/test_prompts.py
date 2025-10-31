@@ -42,36 +42,25 @@ origami:
         PromptLoader._instance = None
 
 
-def test_prompt_loader_get_simple_prompts() -> None:
-    """Test getting simple prompts"""
+def test_prompt_loader_get_base_prompts() -> None:
+    """Test getting base prompts"""
     from lib.prompts import PromptLoader
 
     # Force reload
     PromptLoader._instance = None
 
     loader = PromptLoader()
-    system, user = loader.get_simple_prompts()
+    system, user = loader.get_base_prompts()
 
     assert isinstance(system, str)
     assert isinstance(user, str)
     assert len(system) > 0
     assert len(user) > 0
-
-
-def test_prompt_loader_get_origami_prompts() -> None:
-    """Test getting origami prompts"""
-    from lib.prompts import PromptLoader
-
-    # Force reload
-    PromptLoader._instance = None
-
-    loader = PromptLoader()
-    system, user = loader.get_origami_prompts()
-
-    assert isinstance(system, str)
-    assert isinstance(user, str)
-    assert len(system) > 0
-    assert len(user) > 0
+    assert "{title}" in user
+    assert "{content}" in user
+    assert "{style}" in user
+    assert "{style_description}" in user
+    assert "{count}" in user
 
 
 def test_prompt_loader_format_user_prompt() -> None:
@@ -108,8 +97,8 @@ def test_get_prompt_loader() -> None:
     loader = get_prompt_loader()
 
     assert loader is not None
-    assert hasattr(loader, "get_simple_prompts")
-    assert hasattr(loader, "get_origami_prompts")
+    assert hasattr(loader, "get_base_prompts")
+    assert hasattr(loader, "format_user_prompt")
 
 
 def test_prompt_loader_fallback_when_no_file() -> None:
@@ -121,7 +110,7 @@ def test_prompt_loader_fallback_when_no_file() -> None:
 
     with patch("pathlib.Path.exists", return_value=False):
         loader = PromptLoader()
-        system, user = loader.get_simple_prompts()
+        system, user = loader.get_base_prompts()
 
         # Should still return valid prompts (fallback)
         assert isinstance(system, str)

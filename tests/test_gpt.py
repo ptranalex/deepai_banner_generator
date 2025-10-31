@@ -27,45 +27,8 @@ def test_gpt_client_custom_api_key() -> None:
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_simple_prompt(mock_openai: Mock, mock_env_vars: None) -> None:
-    """Test simple prompt generation"""
-    from lib.gpt import GPTClient
-
-    # Mock the OpenAI response
-    mock_client = Mock()
-    mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content="Test banner prompt"))]
-    mock_client.chat.completions.create.return_value = mock_response
-    mock_openai.return_value = mock_client
-
-    client = GPTClient()
-    prompt = client.generate_simple_prompt("Test Title", "Test content here")
-
-    assert prompt == "Test banner prompt"
-    mock_client.chat.completions.create.assert_called_once()
-
-
-@patch("lib.gpt.OpenAI")
-def test_generate_simple_prompt_removes_quotes(mock_openai: Mock, mock_env_vars: None) -> None:
-    """Test that simple prompt generation removes surrounding quotes"""
-    from lib.gpt import GPTClient
-
-    mock_client = Mock()
-    mock_response = Mock()
-    mock_response.choices = [Mock(message=Mock(content='"Quoted prompt"'))]
-    mock_client.chat.completions.create.return_value = mock_response
-    mock_openai.return_value = mock_client
-
-    client = GPTClient()
-    prompt = client.generate_simple_prompt("Title", "Content")
-
-    assert prompt == "Quoted prompt"
-    assert not prompt.startswith('"')
-
-
-@patch("lib.gpt.OpenAI")
-def test_generate_origami_prompts(mock_openai: Mock, mock_env_vars: None) -> None:
-    """Test origami prompt generation returns 10 prompts"""
+def test_generate_prompts_default(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test prompt generation with default parameters (10 prompts)"""
     from lib.gpt import GPTClient
 
     mock_client = Mock()
@@ -76,18 +39,39 @@ def test_generate_origami_prompts(mock_openai: Mock, mock_env_vars: None) -> Non
     mock_openai.return_value = mock_client
 
     client = GPTClient()
-    prompts = client.generate_origami_prompts("Test Title", "Test content")
+    prompts = client.generate_prompts("Test Title", "Test content", "origami-3d-generator")
 
     assert len(prompts) == 10
     assert all(isinstance(p, str) for p in prompts)
     assert prompts[0] == "Prompt 1"
+    mock_client.chat.completions.create.assert_called_once()
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_origami_prompts_handles_various_formats(
-    mock_openai: Mock, mock_env_vars: None
-) -> None:
-    """Test origami prompts handle different numbering formats"""
+def test_generate_prompts_custom_count(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test prompt generation with custom count"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_response = Mock()
+    numbered_prompts = "\n".join([f"{i}. Prompt {i}" for i in range(1, 6)])
+    mock_response.choices = [Mock(message=Mock(content=numbered_prompts))]
+    mock_client.chat.completions.create.return_value = mock_response
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    prompts = client.generate_prompts(
+        "Test Title", "Test content", "cyberpunk-generator", num_prompts=5
+    )
+
+    assert len(prompts) == 5
+    assert prompts[0] == "Prompt 1"
+    assert prompts[4] == "Prompt 5"
+
+
+@patch("lib.gpt.OpenAI")
+def test_generate_prompts_handles_various_formats(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test prompts handle different numbering formats"""
     from lib.gpt import GPTClient
 
     mock_client = Mock()
@@ -99,26 +83,25 @@ def test_generate_origami_prompts_handles_various_formats(
 4- Fourth prompt
 5. Fifth prompt
 6. Sixth prompt
-7. Seventh prompt
-8. Eighth prompt
-9. Ninth prompt
-10. Tenth prompt"""
+7. Seventh prompt"""
     mock_response.choices = [Mock(message=Mock(content=mixed_format))]
     mock_client.chat.completions.create.return_value = mock_response
     mock_openai.return_value = mock_client
 
     client = GPTClient()
-    prompts = client.generate_origami_prompts("Title", "Content")
+    prompts = client.generate_prompts(
+        "Title", "Content", "watercolor-painting-generator", num_prompts=7
+    )
 
-    assert len(prompts) == 10
+    assert len(prompts) == 7
     assert prompts[0] == "First prompt"
     assert prompts[1] == "Second prompt"
     assert prompts[2] == "Third prompt"
 
 
 @patch("lib.gpt.OpenAI")
-def test_generate_simple_prompt_handles_exception(mock_openai: Mock, mock_env_vars: None) -> None:
-    """Test simple prompt generation handles API exceptions"""
+def test_generate_prompts_handles_exception(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test prompt generation handles API exceptions"""
     from lib.gpt import GPTClient
 
     mock_client = Mock()
@@ -128,19 +111,4 @@ def test_generate_simple_prompt_handles_exception(mock_openai: Mock, mock_env_va
     client = GPTClient()
 
     with pytest.raises(SystemExit):
-        client.generate_simple_prompt("Title", "Content")
-
-
-@patch("lib.gpt.OpenAI")
-def test_generate_origami_prompts_handles_exception(mock_openai: Mock, mock_env_vars: None) -> None:
-    """Test origami prompt generation handles API exceptions"""
-    from lib.gpt import GPTClient
-
-    mock_client = Mock()
-    mock_client.chat.completions.create.side_effect = Exception("API Error")
-    mock_openai.return_value = mock_client
-
-    client = GPTClient()
-
-    with pytest.raises(SystemExit):
-        client.generate_origami_prompts("Title", "Content")
+        client.generate_prompts("Title", "Content", "origami-3d-generator")

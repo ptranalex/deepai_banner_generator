@@ -1,0 +1,351 @@
+# DeepAI Style Configuration
+#
+# This file contains all available DeepAI image generation styles.
+# Each style maps to a specific API endpoint with optional default parameters.
+#
+# You can customize this file or create deepai_styles.local.yaml to override
+# these settings locally without affecting version control.
+#
+# Structure:
+#   slug:                    # URL-safe identifier (used in CLI)
+#     name: "Display Name"   # Human-readable name
+#     description: "..."     # Visual aesthetic description for GPT
+#     endpoint: "api-endpoint"  # DeepAI API endpoint path
+#     default_params:        # Optional default parameters for this style
+#       param_name: value
+
+styles:
+  # 3D Generators
+  origami-3d-generator:
+    name: "3D Origami Generator"
+    description: "Paper-folded, layered 3D compositions in soft pastel light. Perfect for illustrating empathy, leadership, and transformation."
+    endpoint: "origami-3d-generator"
+    default_params:
+      turbo: true
+      genius_preference: "classic"
+
+  3d-objects-generator:
+    name: "3D Objects Generator"
+    description: "Clean 3D-rendered shapes with realistic lighting and shadows. Great for minimalist symbolic compositions."
+    endpoint: "3d-objects-generator"
+    default_params: {}
+
+  hologram-3d-generator:
+    name: "3D Hologram Generator"
+    description: "Light-based forms floating in translucent 3D space. Evokes technology, memory, and futuristic storytelling."
+    endpoint: "hologram-3d-generator"
+    default_params: {}
+
+  3d-character-generator:
+    name: "3D Character Generator"
+    description: "Lifelike 3D characters with dynamic lighting and depth. Works well for personality and expressive storytelling."
+    endpoint: "3d-character-generator"
+    default_params: {}
+
+  3d-cartoon-generator:
+    name: "3D Cartoon Character Generator"
+    description: "Stylized, friendly 3D cartoon characters. Conveys approachability and playfulness."
+    endpoint: "3d-cartoon-generator"
+    default_params: {}
+
+  # Anime & Manga
+  anime-portrait-generator:
+    name: "Anime Portrait Generator"
+    description: "Vivid anime-style faces with expressive lighting and stylized detail. Works well for emotional or narrative-driven themes."
+    endpoint: "anime-portrait-generator"
+    default_params: {}
+
+  anime-world-generator:
+    name: "Anime World Generator"
+    description: "Vibrant landscapes with anime-style coloring and atmospheric depth. Ideal for adventure or wonder."
+    endpoint: "anime-world-generator"
+    default_params: {}
+
+  anime-superhero-generator:
+    name: "Anime Superhero Generator"
+    description: "Dynamic heroic poses with dramatic lighting in anime style. Perfect for energy, hope, or transformation."
+    endpoint: "anime-superhero-generator"
+    default_params: {}
+
+  manga-panel-genarator:
+    name: "Manga Panel Generator"
+    description: "Black-and-white manga-style panels with expressive linework. Great for storytelling and emotional beats."
+    endpoint: "manga-panel-genarator"
+    default_params: {}
+
+  # Fantasy & Sci-Fi
+  fantasy-world-generator:
+    name: "Fantasy World Generator"
+    description: "Epic landscapes filled with mist, castles, and glowing light. Use for wonder, exploration, or mythic storytelling."
+    endpoint: "fantasy-world-generator"
+    default_params: {}
+
+  fantasy-character-generator:
+    name: "Fantasy Character Generator"
+    description: "Mythical beings with ethereal details and fantasy armor. Evokes magic, heroism, or otherworldly presence."
+    endpoint: "fantasy-character-generator"
+    default_params: {}
+
+  fantasy-portrait-generator:
+    name: "Fantasy Portrait Generator"
+    description: "Detailed fantasy-style portraits with magical or mystical elements. Perfect for character-driven narratives."
+    endpoint: "fantasy-portrait-generator"
+    default_params: {}
+
+  fantasy-map-generator:
+    name: "Fantasy Map Generator"
+    description: "Ancient-looking cartographic maps with parchment texture. Ideal for journey, exploration, or world-building."
+    endpoint: "fantasy-map-generator"
+    default_params: {}
+
+  space-world-generator:
+    name: "Space World Generator"
+    description: "Cosmic vistas with stars, nebulae, and alien planets. Conveys vastness, possibility, or isolation."
+    endpoint: "space-world-generator"
+    default_params: {}
+
+  # Cyberpunk & Futuristic
+  cyberpunk-generator:
+    name: "Cyberpunk Generator"
+    description: "Futuristic neon cities, high contrast lighting, holograms, and metallic hues. Conveys tension, rebellion, or technology-driven futures."
+    endpoint: "cyberpunk-generator"
+    default_params: {}
+
+  cyberpunk-portrait-generator:
+    name: "Cyberpunk Portrait Generator"
+    description: "Neon-lit faces with augmented features and dark urban backdrops. Perfect for edgy, tech-forward narratives."
+    endpoint: "cyberpunk-portrait-generator"
+    default_params: {}
+
+  cyber-beast-generator:
+    name: "Cyber Beast Generator"
+    description: "Mechanical creatures with circuitry and metallic textures. Symbolizes evolution, power, or AI."
+    endpoint: "cyber-beast-generator"
+    default_params: {}
+
+  dystopian-landscape-generator:
+    name: "Dystopian Landscape Generator"
+    description: "Dark, crumbling urban ruins or wastelands. Evokes loss, survival, or societal collapse."
+    endpoint: "dystopian-landscape-generator"
+    default_params: {}
+
+  # Steampunk
+  steampunk-generator:
+    name: "Steampunk Generator"
+    description: "Victorian-era machinery with brass gears and steam. Perfect for invention, nostalgia, or alternate history."
+    endpoint: "steampunk-generator"
+    default_params: {}
+
+  steampunk-landscape-generator:
+    name: "Steampunk Landscape Generator"
+    description: "Industrial cityscapes with airships and clockwork towers. Conveys innovation and retro-futurism."
+    endpoint: "steampunk-landscape-generator"
+    default_params: {}
+
+  # Art Styles - Classic
+  old-style-generator:
+    name: "Old Drawing Generator"
+    description: "Renaissance-style pencil or charcoal sketch look. Adds a historical or reflective tone to concepts."
+    endpoint: "old-style-generator"
+    default_params: {}
+
+  renaissance-painting-generator:
+    name: "Renaissance Painting Generator"
+    description: "Rich classical oil-paint aesthetic with warm tones and balanced light. Evokes depth, tradition, and timeless beauty."
+    endpoint: "renaissance-painting-generator"
+    default_params: {}
+
+  impressionism-painting-generator:
+    name: "Impressionism Painting Generator"
+    description: "Soft brushstrokes and glowing light inspired by Monet-style impressionism. Captures fleeting moments and human warmth."
+    endpoint: "impressionism-painting-generator"
+    default_params: {}
+
+  watercolor-painting-generator:
+    name: "Watercolor Painting Generator"
+    description: "Fluid, soft-toned brushwork and bleeding color. Evokes calmness, reflection, and emotion."
+    endpoint: "watercolor-painting-generator"
+    default_params: {}
+
+  baroque-art-generator:
+    name: "Baroque Art Generator"
+    description: "Dramatic lighting and ornate details in classical European style. Perfect for grandeur or intensity."
+    endpoint: "baroque-art-generator"
+    default_params: {}
+
+  # Art Styles - Modern
+  abstract-painting-generator:
+    name: "Abstract Painting Generator"
+    description: "Shapes, colors, and gradients used to symbolize emotion and motion. Ideal for introspective or conceptual visuals."
+    endpoint: "abstract-painting-generator"
+    default_params: {}
+
+  surreal-graphics-generator:
+    name: "Surreal Graphics Generator"
+    description: "Dreamlike juxtapositions of objects and forms. Ideal for abstract reflection, paradox, or emotion through metaphor."
+    endpoint: "surreal-graphics-generator"
+    default_params: {}
+
+  pop-art-generator:
+    name: "Pop Art Generator"
+    description: "Bold colors, flat graphics, and high contrast in Warhol-inspired style. Conveys energy, modernity, or irony."
+    endpoint: "pop-art-generator"
+    default_params: {}
+
+  art-deco-generator:
+    name: "Art Deco Generator"
+    description: "Geometric patterns and luxurious golden tones from the 1920s. Evokes elegance, sophistication, or aspiration."
+    endpoint: "art-deco-generator"
+    default_params: {}
+
+  art-nouveau-generator:
+    name: "Art Nouveau Generator"
+    description: "Flowing organic lines and natural motifs in decorative style. Perfect for growth, beauty, or harmony."
+    endpoint: "art-nouveau-generator"
+    default_params: {}
+
+  minimalistic-art-generator:
+    name: "Minimalistic Art Generator"
+    description: "Simple compositions with clean lines and limited color. Emphasizes clarity, focus, or restraint."
+    endpoint: "minimalistic-art-generator"
+    default_params: {}
+
+  # Comics & Street Art
+  comics-portrait-generator:
+    name: "Comics Portrait Generator"
+    description: "Bold comic-book style with thick outlines and vibrant colors. Great for dynamic or heroic themes."
+    endpoint: "comics-portrait-generator"
+    default_params: {}
+
+  comics-superhero-generator:
+    name: "Comics Superhero Generator"
+    description: "Classic superhero poses with dramatic shading and action lines. Conveys strength, justice, or courage."
+    endpoint: "comics-superhero-generator"
+    default_params: {}
+
+  street-art-generator:
+    name: "Street Art Generator"
+    description: "Urban graffiti aesthetic with spray-paint textures and bold messaging. Evokes rebellion, culture, or grassroots movement."
+    endpoint: "street-art-generator"
+    default_params: {}
+
+  pixel-art-generator:
+    name: "Pixel Art Generator"
+    description: "Retro 8-bit or 16-bit pixel graphics. Perfect for nostalgia, gaming, or simplified iconography."
+    endpoint: "pixel-art-generator"
+    default_params: {}
+
+  pixel-world-generator:
+    name: "Pixel World Generator"
+    description: "Retro pixel-art landscapes with blocky terrain and simple colors. Evokes nostalgia and simplicity."
+    endpoint: "pixel-world-generator"
+    default_params: {}
+
+  # Architecture
+  contemporary-architecture-generator:
+    name: "Contemporary Architecture Generator"
+    description: "Modern buildings with clean lines and glass facades. Conveys progress, innovation, or urban life."
+    endpoint: "contemporary-architecture-generator"
+    default_params: {}
+
+  future-architecture-generator:
+    name: "Future Architecture Generator"
+    description: "Futuristic structures with unconventional shapes and high-tech materials. Perfect for vision or transformation."
+    endpoint: "future-architecture-generator"
+    default_params: {}
+
+  watercolor-architecture-generator:
+    name: "Watercolor Architecture Generator"
+    description: "Buildings rendered in soft watercolor with blurred edges. Adds warmth and artistic impression."
+    endpoint: "watercolor-architecture-generator"
+    default_params: {}
+
+  # Portraits & Characters
+  surreal-portrait-generator:
+    name: "Surreal Portrait Generator"
+    description: "Faces with dreamlike distortions or symbolic elements. Ideal for psychological depth or introspection."
+    endpoint: "surreal-portrait-generator"
+    default_params: {}
+
+  haunted-portrait-generator:
+    name: "Haunted Portrait Generator"
+    description: "Eerie or ghostly faces with dark atmospheres. Evokes mystery, fear, or the uncanny."
+    endpoint: "haunted-portrait-generator"
+    default_params: {}
+
+  urban-fashion-generator:
+    name: "Urban Fashion Generator"
+    description: "Contemporary street fashion with modern styling and urban backdrops. Perfect for identity or culture."
+    endpoint: "urban-fashion-generator"
+    default_params: {}
+
+  # Creatures & Nature
+  cute-creature-generator:
+    name: "Cute Creature Generator"
+    description: "Soft, rounded, and whimsical characters in pastel or toy-like tones. Ideal for warmth, playfulness, and charm."
+    endpoint: "cute-creature-generator"
+    default_params: {}
+
+  ocean-life-generator:
+    name: "Ocean Life Generator"
+    description: "Marine creatures and underwater scenes with flowing forms. Evokes depth, mystery, or tranquility."
+    endpoint: "ocean-life-generator"
+    default_params: {}
+
+  # Dark & Gothic
+  neo-noir-generator:
+    name: "Neo Noir Generator"
+    description: "Dark urban scenes with dramatic shadows and rain-slicked streets. Perfect for tension, mystery, or moral ambiguity."
+    endpoint: "neo-noir-generator"
+    default_params: {}
+
+  gothic-art-generator:
+    name: "Gothic Art Generator"
+    description: "Dark medieval aesthetics with pointed arches and shadowy tones. Evokes drama, solemnity, or the sublime."
+    endpoint: "gothic-art-generator"
+    default_params: {}
+
+  grotesque-art-generator:
+    name: "Grotesque Art Generator"
+    description: "Distorted or exaggerated forms with unsettling beauty. Ideal for confronting discomfort or the absurd."
+    endpoint: "grotesque-art-generator"
+    default_params: {}
+
+  # Mystical & Tribal
+  prophetic-vision-generator:
+    name: "Prophetic Vision Generator"
+    description: "Mystical scenes with glowing symbols and cosmic energy. Conveys revelation, destiny, or spiritual insight."
+    endpoint: "prophetic-vision-generator"
+    default_params: {}
+
+  mysticism-art-generator:
+    name: "Mysticism Art Generator"
+    description: "Spiritual imagery with sacred geometry and ethereal light. Perfect for transcendence or inner wisdom."
+    endpoint: "mysticism-art-generator"
+    default_params: {}
+
+  tribal-art-generator:
+    name: "Tribal Art Generator"
+    description: "Indigenous patterns and earthy tones with cultural symbolism. Evokes heritage, community, or connection to nature."
+    endpoint: "tribal-art-generator"
+    default_params: {}
+
+  # Specialized
+  logo-generator:
+    name: "AI Logo Generator"
+    description: "Clean, professional logo designs with bold shapes. Ideal for branding, identity, or symbolic representation."
+    endpoint: "logo-generator"
+    default_params: {}
+
+  children-book-generator:
+    name: "Children's Book Illustration Generator"
+    description: "Bright, friendly illustrations with storybook charm. Perfect for innocence, learning, or whimsy."
+    endpoint: "children-book-generator"
+    default_params: {}
+
+  # Default/Fallback - Simple Text2Img
+  text2img:
+    name: "Text to Image (Simple)"
+    description: "General-purpose text-to-image generation without specific style constraints. Flexible for any concept."
+    endpoint: "text2img"
+    default_params: {}

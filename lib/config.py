@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     default_height: int = Field(1024, ge=128, le=2048, description="Default banner height")
     default_style: Literal["simple", "origami"] = "origami"
     default_version: Literal["standard", "hd", "genius"] = "standard"
+    default_deepai_style: str = "origami-3d-generator"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -50,6 +50,10 @@ class PromptLoader:
     def _get_fallback_prompts(self) -> dict[str, Any]:
         """Fallback prompts if YAML file is missing"""
         return {
+            "base": {
+                "system": "You are a creative image prompt generator for DeepAI. Generate style-aware banner prompts.",
+                "user": "Style: {style}\nTitle: {title}\n\nContent:\n{content}\n\nGenerate {count} cinematic prompts.",
+            },
             "simple": {
                 "system": "You are a creative prompt generator that turns blog posts into vivid image prompts.",
                 "user": "Title: {title}\n\nBlog:\n{content}\n\nGenerate one concise image prompt.",
@@ -82,18 +86,30 @@ class PromptLoader:
         user = origami.get("user", "").strip()
         return system, user
 
-    def format_user_prompt(self, template: str, title: str, content: str) -> str:
+    def get_base_prompts(self) -> tuple[str, str]:
+        """Get base prompt templates
+
+        Returns:
+            Tuple of (system_prompt, user_template)
+        """
+        base = self._prompts.get("base", {})
+        system = base.get("system", "").strip()
+        user = base.get("user", "").strip()
+        return system, user
+
+    def format_user_prompt(self, template: str, title: str, content: str, **kwargs: Any) -> str:
         """Format user prompt template with variables
 
         Args:
-            template: Template string with {title} and {content} placeholders
+            template: Template string with placeholders
             title: Blog post title
             content: Blog post content
+            **kwargs: Additional template variables (e.g., style, style_description, count)
 
         Returns:
             Formatted prompt string
         """
-        return template.format(title=title, content=content)
+        return template.format(title=title, content=content, **kwargs)
 
 
 # Singleton instance for easy access
