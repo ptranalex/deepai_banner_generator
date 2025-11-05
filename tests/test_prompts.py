@@ -154,3 +154,61 @@ simple:
     finally:
         os.chdir(original_dir)
         PromptLoader._instance = None
+
+
+def test_prompt_loader_loads_style_suggestion_template() -> None:
+    """Test that style_suggestion template is loaded correctly"""
+    from lib.prompts import PromptLoader
+
+    # Force reload
+    PromptLoader._instance = None
+
+    loader = PromptLoader()
+
+    # Access the style_suggestion prompts directly
+    prompts_dict = loader._prompts.get("style_suggestion", {})
+    system_prompt = prompts_dict.get("system", "").strip()
+    user_template = prompts_dict.get("user", "").strip()
+
+    # Verify template exists and has expected placeholders
+    assert len(system_prompt) > 0, "style_suggestion system prompt should exist"
+    assert len(user_template) > 0, "style_suggestion user template should exist"
+    assert "{styles_list}" in user_template, "Template should have {styles_list} placeholder"
+    assert "{title}" in user_template, "Template should have {title} placeholder"
+    assert "{content}" in user_template, "Template should have {content} placeholder"
+    assert "{count}" in user_template, "Template should have {count} placeholder"
+
+    # Verify system prompt mentions key concepts
+    assert "style" in system_prompt.lower(), "System prompt should mention styles"
+    assert "confidence" in system_prompt.lower(), "System prompt should mention confidence"
+
+
+def test_style_suggestion_template_format() -> None:
+    """Test formatting the style_suggestion template with actual data"""
+    from lib.prompts import PromptLoader
+
+    PromptLoader._instance = None
+    loader = PromptLoader()
+
+    prompts_dict = loader._prompts.get("style_suggestion", {})
+    user_template = prompts_dict.get("user", "").strip()
+
+    # Format with test data
+    styles_list = "- style-a: Style A - Description A\n- style-b: Style B - Description B"
+    formatted = user_template.format(
+        styles_list=styles_list,
+        title="Test Blog Title",
+        content="Test blog content here",
+        count=3,
+    )
+
+    # Verify all placeholders were replaced
+    assert "{styles_list}" not in formatted
+    assert "{title}" not in formatted
+    assert "{content}" not in formatted
+    assert "{count}" not in formatted
+
+    # Verify data was inserted
+    assert "style-a" in formatted
+    assert "Test Blog Title" in formatted
+    assert "Test blog content" in formatted

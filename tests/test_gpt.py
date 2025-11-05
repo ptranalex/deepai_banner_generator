@@ -112,3 +112,156 @@ def test_generate_prompts_handles_exception(mock_openai: Mock, mock_env_vars: No
 
     with pytest.raises(SystemExit):
         client.generate_prompts("Title", "Content", "origami-3d-generator")
+
+
+@patch("lib.gpt.OpenAI")
+def test_suggest_styles_returns_suggestions(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test style suggestion with valid JSON response"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_response = Mock()
+    # Mock GPT response with JSON suggestions
+    json_response = """[
+  {"slug": "cyberpunk-generator", "confidence": 0.92, "reasoning": "Technical content about AI"},
+  {"slug": "hologram-3d-generator", "confidence": 0.85, "reasoning": "Future-focused theme"},
+  {"slug": "neon-gradient-generator", "confidence": 0.78, "reasoning": "Modern aesthetic"}
+]"""
+    mock_response.choices = [Mock(message=Mock(content=json_response))]
+    mock_client.chat.completions.create.return_value = mock_response
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    available_styles = [
+        ("cyberpunk-generator", "Cyberpunk Generator", "Neon-lit futuristic scenes"),
+        ("hologram-3d-generator", "3D Hologram Generator", "Light-based forms"),
+        ("neon-gradient-generator", "Neon Gradient Generator", "Vibrant neon colors"),
+    ]
+
+    suggestions = client.suggest_styles(
+        title="AI Coding Tools",
+        content="Article about modern AI development...",
+        available_styles=available_styles,
+        num_suggestions=3,
+    )
+
+    assert len(suggestions) == 3
+    assert suggestions[0][0] == "cyberpunk-generator"
+    assert suggestions[0][1] == 0.92
+    assert "Technical" in suggestions[0][2]
+    mock_client.chat.completions.create.assert_called_once()
+
+
+@patch("lib.gpt.OpenAI")
+def test_suggest_styles_handles_markdown_json(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test style suggestion handles JSON wrapped in markdown code blocks"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_response = Mock()
+    # GPT sometimes wraps JSON in code blocks
+    markdown_json_response = """```json
+[
+  {"slug": "origami-3d-generator", "confidence": 0.88, "reasoning": "Paper-folded aesthetic"}
+]
+```"""
+    mock_response.choices = [Mock(message=Mock(content=markdown_json_response))]
+    mock_client.chat.completions.create.return_value = mock_response
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    available_styles = [("origami-3d-generator", "3D Origami", "Paper-folded 3D compositions")]
+
+    suggestions = client.suggest_styles(
+        title="Test",
+        content="Content",
+        available_styles=available_styles,
+    )
+
+    assert len(suggestions) == 1
+    assert suggestions[0][0] == "origami-3d-generator"
+    assert suggestions[0][1] == 0.88
+
+
+@patch("lib.gpt.OpenAI")
+def test_suggest_styles_handles_invalid_json(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test style suggestion returns empty list for invalid JSON"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_response = Mock()
+    # Invalid JSON response
+    mock_response.choices = [Mock(message=Mock(content="Not valid JSON at all"))]
+    mock_client.chat.completions.create.return_value = mock_response
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    available_styles = [("test-style", "Test Style", "Test description")]
+
+    suggestions = client.suggest_styles(
+        title="Test",
+        content="Content",
+        available_styles=available_styles,
+    )
+
+    # Should return empty list gracefully instead of crashing
+    assert suggestions == []
+
+
+@patch("lib.gpt.OpenAI")
+def test_suggest_styles_handles_api_exception(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test style suggestion handles API exceptions gracefully"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_client.chat.completions.create.side_effect = Exception("API Error")
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    available_styles = [("test-style", "Test Style", "Test description")]
+
+    # Should return empty list instead of raising exception
+    suggestions = client.suggest_styles(
+        title="Test",
+        content="Content",
+        available_styles=available_styles,
+    )
+
+    assert suggestions == []
+
+
+@patch("lib.gpt.OpenAI")
+def test_suggest_styles_sorts_by_confidence(mock_openai: Mock, mock_env_vars: None) -> None:
+    """Test style suggestions are sorted by confidence descending"""
+    from lib.gpt import GPTClient
+
+    mock_client = Mock()
+    mock_response = Mock()
+    # Unsorted confidence scores
+    json_response = """[
+  {"slug": "style-a", "confidence": 0.75, "reasoning": "Reason A"},
+  {"slug": "style-b", "confidence": 0.92, "reasoning": "Reason B"},
+  {"slug": "style-c", "confidence": 0.83, "reasoning": "Reason C"}
+]"""
+    mock_response.choices = [Mock(message=Mock(content=json_response))]
+    mock_client.chat.completions.create.return_value = mock_response
+    mock_openai.return_value = mock_client
+
+    client = GPTClient()
+    available_styles = [
+        ("style-a", "Style A", "Description A"),
+        ("style-b", "Style B", "Description B"),
+        ("style-c", "Style C", "Description C"),
+    ]
+
+    suggestions = client.suggest_styles(
+        title="Test",
+        content="Content",
+        available_styles=available_styles,
+    )
+
+    # Should be sorted by confidence (highest first)
+    assert suggestions[0][0] == "style-b"  # 0.92
+    assert suggestions[1][0] == "style-c"  # 0.83
+    assert suggestions[2][0] == "style-a"  # 0.75
+    assert suggestions[0][1] > suggestions[1][1] > suggestions[2][1]

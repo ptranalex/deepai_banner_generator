@@ -36,11 +36,15 @@ class Version(str, Enum):
     genius = "genius"
 
 
-def interactive_select_style(default_slug: str = "origami-3d-generator") -> str:
+def interactive_select_style(
+    default_slug: str = "origami-3d-generator",
+    suggestions: list[tuple[str, float, str]] | None = None,
+) -> str:
     """Display styles and let user select one interactively
 
     Args:
         default_slug: Default style slug to pre-select
+        suggestions: Optional list of (slug, confidence, reasoning) tuples from GPT
 
     Returns:
         Selected style slug
@@ -52,25 +56,74 @@ def interactive_select_style(default_slug: str = "origami-3d-generator") -> str:
         console.print("[red]No styles found in configuration.[/red]")
         raise typer.Exit(1)
 
+    # If suggestions provided, show them in a panel first
+    if suggestions:
+        console.print("\n💡 [bold cyan]AI Style Recommendations:[/bold cyan]\n")
+
+        for rank, (slug, confidence, reasoning) in enumerate(suggestions, 1):
+            style_obj = loader.get_style(slug)
+            if style_obj:
+                confidence_pct = int(confidence * 100)
+                console.print(
+                    f"  {rank}. [bold green]{style_obj.name}[/bold green] "
+                    f"[dim]({confidence_pct}% match)[/dim]"
+                )
+                console.print(f"     [dim]{reasoning}[/dim]\n")
+
+    # Create suggestion lookup for highlighting
+    suggestion_slugs = {
+        slug: (confidence, rank) for rank, (slug, confidence, _) in enumerate(suggestions or [], 1)
+    }
+
+    # Find default index (prefer top suggestion if available)
+    if suggestions and suggestions[0][0]:
+        default_slug = suggestions[0][0]
+
     # Create a table for style selection
     table = Table(title="🎨 Select DeepAI Image Generation Style", show_header=True)
     table.add_column("#", style="cyan", width=4)
+    table.add_column("", width=2)  # Star column
     table.add_column("Style Name", style="green")
-    table.add_column("Description", style="dim", max_width=60)
+    table.add_column("Description", style="dim", max_width=50)
 
     # Find default index
     default_index = 0
     for idx, style in enumerate(styles, 1):
         if style.slug == default_slug:
             default_index = idx
+
+        # Check if this is a suggested style
+        star = ""
+        name_prefix = ""
+        name_suffix = ""
+        if style.slug in suggestion_slugs:
+            confidence, rank = suggestion_slugs[style.slug]
+            star = "⭐" if rank == 1 else "✨"
+            confidence_pct = int(confidence * 100)
+            name_prefix = "[bold]"
+            name_suffix = f"[/bold] [dim]({confidence_pct}%)[/dim]"
+
+        # Apply bold for default
+        if style.slug == default_slug and not name_prefix:
+            name_prefix = "[bold]"
+            name_suffix = "[/bold]"
+
         table.add_row(
             str(idx),
-            f"{'[bold]' if style.slug == default_slug else ''}{style.name}{'[/bold]' if style.slug == default_slug else ''}",
-            (style.description[:57] + "..." if len(style.description) > 60 else style.description),
+            star,
+            f"{name_prefix}{style.name}{name_suffix}",
+            (style.description[:47] + "..." if len(style.description) > 50 else style.description),
         )
 
     console.print(table)
-    console.print(f"\n[dim]Default: #{default_index} - {styles[default_index - 1].name}[/dim]")
+
+    # Show default hint
+    default_style_obj = styles[default_index - 1]
+    if default_index > 0:
+        console.print(
+            f"\n[dim]Default: #{default_index} - {default_style_obj.name}"
+            f"{' (Top recommendation)' if suggestions and suggestions[0][0] == default_style_obj.slug else ''}[/dim]"
+        )
 
     # Get user selection
     while True:
@@ -355,22 +408,7 @@ def generate(
         console.print("[red]Error: Width and height must be multiples of 32[/red]")
         raise typer.Exit(1)
 
-    # Interactive style selection if not provided
-    if not deepai_style:
-        console.print("\n")
-        deepai_style = interactive_select_style()
-
-    # Validate the selected style
-    style_loader = get_style_loader()
-    selected_style = style_loader.get_style(deepai_style)
-    if not selected_style:
-        console.print(f"[red]Invalid style: {deepai_style}[/red]")
-        raise typer.Exit(1)
-
-    console.print(f"\n✨ [green]Using style:[/green] {selected_style.name}")
-    console.print(f"[dim]{selected_style.description}[/dim]\n")
-
-    # Initialize clients
+    # Initialize clients early (GPT needed for style suggestions)
     try:
         gpt_client = GPTClient(openai_key)
         deepai_client = DeepAIClient(deepai_key)
@@ -402,18 +440,56 @@ def generate(
         front_matter, body = MarkdownHandler.parse_markdown_post(selected_file)
         progress.update(task, completed=True)
 
-    # Get title and display info
+    # Get title for initial display
     title = front_matter.get("title", "Blog Post")
     tags = front_matter.get("tags", []) + front_matter.get("categories", [])
 
+    # Show initial post info (without style yet)
     info_panel = Panel(
         f"[bold]Title:[/bold] {title}\n"
-        f"[bold]Tags:[/bold] {', '.join(tags[:5]) if tags else 'None'}\n"
-        f"[bold]Style:[/bold] {selected_style.name}",
+        f"[bold]Tags:[/bold] {', '.join(tags[:5]) if tags else 'None'}",
         title="📄 Post Info",
         border_style="blue",
     )
     console.print(info_panel)
+
+    # Get style suggestions from GPT if style not provided via CLI
+    style_suggestions: list[tuple[str, float, str]] | None = None
+    if not deepai_style:
+        # Get available styles for GPT to analyze
+        style_loader = get_style_loader()
+        all_styles = style_loader.list_styles()
+        available_styles = [(s.slug, s.name, s.description) for s in all_styles]
+
+        # Ask GPT to suggest styles based on content
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("🤖 Analyzing post and suggesting styles...", total=None)
+            style_suggestions = gpt_client.suggest_styles(
+                title=title,
+                content=body,
+                available_styles=available_styles,
+                num_suggestions=5,
+            )
+            progress.update(task, completed=True)
+
+    # Interactive style selection (with suggestions if available)
+    if not deepai_style:
+        console.print("\n")
+        deepai_style = interactive_select_style(suggestions=style_suggestions)
+
+    # Validate the selected style
+    style_loader = get_style_loader()
+    selected_style = style_loader.get_style(deepai_style)
+    if not selected_style:
+        console.print(f"[red]Invalid style: {deepai_style}[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"\n✨ [green]Using style:[/green] {selected_style.name}")
+    console.print(f"[dim]{selected_style.description}[/dim]\n")
 
     # Generate prompts using the new unified method
     with Progress(

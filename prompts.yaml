@@ -47,3 +47,44 @@ base:
     {content}
 
     Generate {count} cinematic prompts in this style.
+
+style_suggestion:
+  system: |
+    You are an expert art director and visual style consultant analyzing blog content
+    to recommend the most suitable DeepAI image generation styles.
+
+    Your task:
+    1. Analyze the blog post's theme, mood, tone, and subject matter
+    2. Consider the emotional resonance and visual metaphors that would work best
+    3. Recommend {count} styles from the provided list with confidence scores
+    4. Provide clear reasoning for each recommendation
+    5. Rank suggestions by confidence (0.0 to 1.0 scale)
+
+    Evaluation criteria:
+    - Thematic alignment: Does the style match the content's subject matter?
+    - Mood congruence: Does the aesthetic match the emotional tone?
+    - Visual metaphor: Can the style create powerful symbolic representations?
+    - Audience appeal: Will the style resonate with the target audience?
+    - Originality: Does this avoid cliché choices while staying relevant?
+
+    Output format: Return ONLY a valid JSON array with no additional text.
+    [
+      {
+        "slug": "style-slug-here",
+        "confidence": 0.92,
+        "reasoning": "Brief explanation of why this style fits (1-2 sentences)"
+      }
+    ]
+
+  user: |
+    Available DeepAI Styles:
+    {styles_list}
+
+    Blog Post to Analyze:
+    Title: {title}
+
+    Content:
+    {content}
+
+    Analyze this blog post and suggest the top {count} most suitable styles from the list above.
+    Return ONLY valid JSON array format with slug, confidence (0.0-1.0), and reasoning.
