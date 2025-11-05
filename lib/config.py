@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     deepai_retry_base_delay: int = Field(
         2, ge=1, le=10, description="Base delay in seconds for exponential backoff"
     )
+    deepai_max_concurrent: int = Field(2, ge=1, le=5, description="Max concurrent DeepAI requests")
 
     # Application Defaults
     default_input_dir: Path = Path("./posts")

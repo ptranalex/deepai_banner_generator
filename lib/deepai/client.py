@@ -1,11 +1,12 @@
-"""DeepAI client for image generation"""
+"""DeepAI client for image generation with async support"""
 
-import time
+import asyncio
 import uuid
 from pathlib import Path
 from typing import Any, Literal
 
-import requests
+import aiofiles
+import aiohttp
 
 from lib.config import get_settings
 from lib.deepai.styles import get_style_loader
@@ -13,7 +14,7 @@ from lib.logger import logger
 
 
 class DeepAIClient:
-    """Client for DeepAI API interactions"""
+    """Client for DeepAI API interactions with async support"""
 
     def __init__(self, api_key: str | None = None) -> None:
         """Initialize DeepAI client
@@ -27,10 +28,11 @@ class DeepAIClient:
         self.timeout = settings.deepai_timeout
         self.max_retries = settings.deepai_max_retries
         self.retry_base_delay = settings.deepai_retry_base_delay
+        self.max_concurrent = settings.deepai_max_concurrent
         self.style_loader = get_style_loader()
         logger.info("Initialized DeepAI client")
 
-    def generate_image(
+    async def generate_image(
         self,
         prompt: str,
         deepai_style: str = "origami-3d-generator",
@@ -39,7 +41,7 @@ class DeepAIClient:
         version: Literal["standard", "hd", "genius"] = "standard",
         **extra_params: Any,
     ) -> str | None:
-        """Generate image and return URL
+        """Generate image and return URL (async)
 
         Args:
             prompt: Text prompt for image generation
@@ -117,64 +119,72 @@ class DeepAIClient:
         logger.debug(f"[{request_id}] Request data: {data}")
 
         # Retry loop with exponential backoff
-        for attempt in range(1, self.max_retries + 1):
-            start_time = time.time()
+        async with aiohttp.ClientSession() as session:
+            for attempt in range(1, self.max_retries + 1):
+                start_time = asyncio.get_event_loop().time()
 
-            try:
-                response = requests.post(
-                    api_url,
-                    headers=headers,
-                    data=data,
-                    timeout=self.timeout,
-                )
+                try:
+                    # Convert data dict to FormData for aiohttp
+                    form_data = aiohttp.FormData()
+                    for key, value in data.items():
+                        form_data.add_field(key, value)
 
-                elapsed = time.time() - start_time
+                    async with session.post(
+                        api_url,
+                        headers=headers,
+                        data=form_data,
+                        timeout=aiohttp.ClientTimeout(total=self.timeout),
+                    ) as response:
+                        elapsed = asyncio.get_event_loop().time() - start_time
 
-                if response.status_code == 200:
-                    result = response.json()
-                    image_url: str | None = result.get("output_url")
-                    logger.info(
-                        f"[{request_id}] Image generated successfully in {elapsed:.1f}s "
-                        f"(attempt {attempt}/{self.max_retries}): {image_url}"
-                    )
-                    return image_url
-                else:
+                        if response.status == 200:
+                            result = await response.json()
+                            image_url: str | None = result.get("output_url")
+                            logger.info(
+                                f"[{request_id}] Image generated successfully in {elapsed:.1f}s "
+                                f"(attempt {attempt}/{self.max_retries}): {image_url}"
+                            )
+                            return image_url
+                        else:
+                            response_text = await response.text()
+                            logger.warning(
+                                f"[{request_id}] API request failed (attempt {attempt}/{self.max_retries}) "
+                                f"after {elapsed:.1f}s - Status {response.status}: {response_text}"
+                            )
+
+                            if attempt < self.max_retries:
+                                delay = self.retry_base_delay * (2 ** (attempt - 1))
+                                logger.info(f"[{request_id}] Retrying in {delay}s...")
+                                await asyncio.sleep(delay)
+                            else:
+                                logger.error(
+                                    f"[{request_id}] All {self.max_retries} attempts failed"
+                                )
+                                logger.error(f"[{request_id}] Final response: {response_text}")
+                                logger.error(f"[{request_id}] Request parameters: {data}")
+                                return None
+
+                except (TimeoutError, aiohttp.ClientError) as e:
+                    elapsed = asyncio.get_event_loop().time() - start_time
                     logger.warning(
-                        f"[{request_id}] API request failed (attempt {attempt}/{self.max_retries}) "
-                        f"after {elapsed:.1f}s - Status {response.status_code}: {response.text}"
+                        f"[{request_id}] Request exception (attempt {attempt}/{self.max_retries}) "
+                        f"after {elapsed:.1f}s: {e}"
                     )
 
                     if attempt < self.max_retries:
                         delay = self.retry_base_delay * (2 ** (attempt - 1))
                         logger.info(f"[{request_id}] Retrying in {delay}s...")
-                        time.sleep(delay)
+                        await asyncio.sleep(delay)
                     else:
-                        logger.error(f"[{request_id}] All {self.max_retries} attempts failed")
-                        logger.error(f"[{request_id}] Final response: {response.text}")
-                        logger.error(f"[{request_id}] Request parameters: {data}")
+                        logger.error(
+                            f"[{request_id}] All {self.max_retries} attempts failed due to exceptions"
+                        )
                         return None
-
-            except requests.RequestException as e:
-                elapsed = time.time() - start_time
-                logger.warning(
-                    f"[{request_id}] Request exception (attempt {attempt}/{self.max_retries}) "
-                    f"after {elapsed:.1f}s: {e}"
-                )
-
-                if attempt < self.max_retries:
-                    delay = self.retry_base_delay * (2 ** (attempt - 1))
-                    logger.info(f"[{request_id}] Retrying in {delay}s...")
-                    time.sleep(delay)
-                else:
-                    logger.error(
-                        f"[{request_id}] All {self.max_retries} attempts failed due to exceptions"
-                    )
-                    return None
 
         return None
 
-    def download_image(self, url: str, output_path: Path) -> bool:
-        """Download image from URL to file
+    async def download_image(self, url: str, output_path: Path) -> bool:
+        """Download image from URL to file (async)
 
         Args:
             url: Image URL
@@ -186,21 +196,25 @@ class DeepAIClient:
         logger.info(f"Downloading image from {url} to {output_path}")
 
         try:
-            response = requests.get(url, timeout=self.timeout)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url, timeout=aiohttp.ClientTimeout(total=self.timeout)
+                ) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        async with aiofiles.open(output_path, "wb") as f:
+                            await f.write(content)
+                        logger.info(f"Image saved successfully to {output_path}")
+                        return True
+                    else:
+                        logger.error(f"Failed to download image: HTTP {response.status}")
+                        return False
 
-            if response.status_code == 200:
-                output_path.write_bytes(response.content)
-                logger.info(f"Image saved successfully to {output_path}")
-                return True
-            else:
-                logger.error(f"Failed to download image: HTTP {response.status_code}")
-                return False
-
-        except requests.RequestException as e:
+        except (TimeoutError, aiohttp.ClientError) as e:
             logger.error(f"Request exception during image download: {e}")
             return False
 
-    def generate_and_save(
+    async def generate_and_save(
         self,
         prompt: str,
         output_path: Path,
@@ -210,7 +224,7 @@ class DeepAIClient:
         version: Literal["standard", "hd", "genius"] = "standard",
         **extra_params: Any,
     ) -> bool:
-        """Generate and save image in one call
+        """Generate and save image in one call (async)
 
         Args:
             prompt: Text prompt
@@ -227,7 +241,7 @@ class DeepAIClient:
         logger.info(f"Generating and saving image to {output_path}")
 
         # Generate image
-        image_url = self.generate_image(
+        image_url = await self.generate_image(
             prompt, deepai_style, width, height, version, **extra_params
         )
 
@@ -236,7 +250,44 @@ class DeepAIClient:
             return False
 
         # Download and save
-        return self.download_image(image_url, output_path)
+        return await self.download_image(image_url, output_path)
+
+    async def generate_batch(
+        self,
+        batch_data: list[dict[str, Any]],
+        max_concurrent: int | None = None,
+    ) -> list[bool]:
+        """Generate multiple images with controlled concurrency (async)
+
+        Args:
+            batch_data: List of dicts with keys: prompt, output_path,
+                        deepai_style, width, height, version, and any extra_params
+            max_concurrent: Max concurrent requests (default from config)
+
+        Returns:
+            List of success/failure for each image
+        """
+        if max_concurrent is None:
+            max_concurrent = self.max_concurrent
+
+        logger.info(
+            f"Starting batch generation: {len(batch_data)} images, max {max_concurrent} concurrent"
+        )
+
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def bounded_generate(data: dict[str, Any]) -> bool:
+            """Generate with semaphore limit"""
+            async with semaphore:
+                return await self.generate_and_save(**data)
+
+        tasks = [bounded_generate(data) for data in batch_data]
+        results = await asyncio.gather(*tasks, return_exceptions=False)
+
+        successful = sum(1 for r in results if r)
+        logger.info(f"Batch generation complete: {successful}/{len(results)} successful")
+
+        return list(results)
 
 
 __all__ = ["DeepAIClient"]

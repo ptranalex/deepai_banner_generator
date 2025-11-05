@@ -4,6 +4,7 @@
 Modern AI-powered banner generator for blog posts using Typer CLI framework.
 """
 
+import asyncio
 from enum import Enum
 from pathlib import Path
 
@@ -462,7 +463,20 @@ def generate(
         else:
             console.print(f"\n🎨 [bold]Generating {len(banner_prompts)} banners...[/bold]")
 
-        # Generate all banners with progress tracking
+        # Prepare batch data for async generation
+        batch_data = [
+            {
+                "prompt": prompt,
+                "output_path": output_path,
+                "deepai_style": deepai_style,
+                "width": width,
+                "height": height,
+                "version": version.value,
+            }
+            for prompt, output_path in zip(banner_prompts, output_paths, strict=False)
+        ]
+
+        # Generate all banners with async batch processing
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -470,22 +484,17 @@ def generate(
         ) as progress:
             task = progress.add_task("Generating banners...", total=len(banner_prompts))
 
+            # Run async batch generation
+            results = asyncio.run(deepai_client.generate_batch(batch_data))
+
+            # Process results
             successful = 0
             failed = 0
             failed_prompts = []
 
-            for prompt, output_path in zip(banner_prompts, output_paths, strict=False):
-                progress.update(task, description=f"Generating {output_path.name}...")
-
-                success = deepai_client.generate_and_save(
-                    prompt=prompt,
-                    output_path=output_path,
-                    deepai_style=deepai_style,
-                    width=width,
-                    height=height,
-                    version=version.value,
-                )
-
+            for success, output_path, prompt in zip(
+                results, output_paths, banner_prompts, strict=False
+            ):
                 if success:
                     console.print(f"  ✓ [green]{output_path.name}[/green]")
                     successful += 1
@@ -612,13 +621,15 @@ def direct(
     # Generate
     console.print("\n🎨 [bold]Generating banner...[/bold]")
 
-    success = deepai_client.generate_and_save(
-        prompt=prompt,
-        output_path=output,
-        deepai_style=deepai_style,
-        width=width,
-        height=height,
-        version=version.value,
+    success = asyncio.run(
+        deepai_client.generate_and_save(
+            prompt=prompt,
+            output_path=output,
+            deepai_style=deepai_style,
+            width=width,
+            height=height,
+            version=version.value,
+        )
     )
 
     if success:
